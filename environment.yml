@@ -1,0 +1,25 @@
+name: genes
+channels:
+  - cannylab
+  - conda-forge
+  - defaults
+dependencies:
+  - plotly=4.6
+  - seaborn=0.10
+  - scikit-learn=0.22
+  - scipy=1.4
+  - numpy=1.18
+  - pandas=1.0.3
+  - matplotlib=3.1
+  - natsort=7.0
+  - numba=0.48
+  - pynndescent=0.4
+  - umap-learn=0.4
+  - cudatoolkit=10.1
+  - cudnn=7.6.5
+  - cupti=10.1
+  - tsnecuda=2.1.0
+  - pip:
+    - streamlit=0.57
+
+prefix: /home/starstorms/anaconda3/envs/shape

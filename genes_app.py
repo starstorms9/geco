@@ -2,31 +2,56 @@
 import streamlit as st
 header = st.title("Starting up...")
 import numpy as np
+import pandas as pd
 import os
 import sys
-import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
+import time
 import re
 from collections import Counter
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 import plotly.express as px
 import base64
-import seaborn as sns
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 from scipy.stats import pearsonr
 import natsort as ns
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import umap
 
 #%% Check for GPU and try to import TSNECuda
 gpu_avail = False
 try :
-    from tsnecuda import TSNE as TSNECuda
+    from tsnecuda import TSNE as TSNECuda        
+    # import ctypes    
+    # libnames = ('libcuda.so', 'libcuda.dylib', 'cuda.dll')
+    # for libname in libnames:
+    #     try:
+    #         cuda = ctypes.CDLL(libname)
+    #     except OSError:
+    #         continue
+    #     else:
+    #         break
+    # else:
+    #     gpu_avail = False
+    # result = cuda.cuInit(0)
+    # assert result == 0
     gpu_avail = True
-except : pass
+except : 
+    print('TSNE Cuda could not be imported, not using GPU.')
 
 nat_sort = lambda l : ns.natsorted(l)
 # nat_sort = lambda l : sorted(l,key=lambda x:int(re.sub("\D","",x) or 0))
 removeinvalidchars = lambda s : re.sub('[^a-zA-Z0-9\n\._ ]', '', s).strip()
+
+#%%
+# host_dir = st.text_input('Folder path', value='/home/starstorms/Projects/Amber/input data')
+# st.write(host_dir)
+# st.write(os.path.exists(host_dir))
+# try :
+#     st.write(os.listdir(host_dir))
+# except Exception as e:
+#     st.write('Error\n\n', str(e))
 
 #%% Helper Methods
 def setWideModeHack():
@@ -193,12 +218,12 @@ def askColorScale(chosen_color) :
 
 
 def calcPlotLimits(dfgene, padding = 1.05) :
-    xmin, xmax = dfgene.tsne1.min(), dfgene.tsne1.max()
-    ymin, ymax = dfgene.tsne2.min(), dfgene.tsne2.max()
+    xmin, xmax = dfgene.red_x.min(), dfgene.red_x.max()
+    ymin, ymax = dfgene.red_y.min(), dfgene.red_y.max()
     xlims, ylims = [xmin*padding, xmax*padding], [ymin*padding, ymax*padding]
     return xlims, ylims
 
-def plotTSNE(dfgene, all_types, color_scale, chosen_color, gids_found, markers_found, xlims, ylims, log_color_scale) :
+def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, markers_found, xlims, ylims, log_color_scale) :
     if len(dfgene) == 0 :
         st.error('No points left after filters.')
         return
@@ -220,7 +245,7 @@ def plotTSNE(dfgene, all_types, color_scale, chosen_color, gids_found, markers_f
     is_type_color = chosen_color == 'type'    
     color_disc_seq = getattr(px.colors.qualitative if disc_color_scale else px.colors.sequential, color_scale)
     
-    fig = px.scatter(dfgene, x="tsne1", y="tsne2",
+    fig = px.scatter(dfgene, x="red_x", y="red_y",
                      color=color_log,
                      range_x = xlims, range_y = ylims,
                      width=1200, height=800,
@@ -242,10 +267,10 @@ def plotTSNE(dfgene, all_types, color_scale, chosen_color, gids_found, markers_f
         fig.update_layout(coloraxis_colorbar=dict( title="Expression", tickvals=ticks, ticktext=tick_txt))
     
     if len(gids_found) > 0:
-        fig.add_scatter(name='Genes', text=gids_found.geneid.values, mode='markers', x=gids_found.tsne1.values, y=gids_found.tsne2.values, line=dict(width=5), marker=dict(size=20, opacity=1.0, line=dict(width=3)) )
+        fig.add_scatter(name='Genes', text=gids_found.geneid.values, mode='markers', x=gids_found.red_x.values, y=gids_found.red_y.values, line=dict(width=5), marker=dict(size=20, opacity=1.0, line=dict(width=3)) )
     
     if len(markers_found) > 0 :
-        fig.add_scatter(name='Markers', text=markers_found.geneid.values, mode='markers', x=markers_found.tsne1.values, y=markers_found.tsne2.values, line=dict(width=1), marker=dict(size=20, opacity=1.0, line=dict(width=3)) )
+        fig.add_scatter(name='Markers', text=markers_found.geneid.values, mode='markers', x=markers_found.red_x.values, y=markers_found.red_y.values, line=dict(width=1), marker=dict(size=20, opacity=1.0, line=dict(width=3)) )
     
     fig.update_layout(legend=dict(x=0, y=0))
     st.plotly_chart(fig, use_container_width=False)
@@ -276,7 +301,7 @@ def plotExpressionInfo(gids_found, sample_names, all_types, avg_cols) :
         labels[dfcorrp < pval_min] = '*'
         np.fill_diagonal(labels.values, '')
         
-        g = sns.clustermap(dfcorr, center=0, annot=labels.values, fmt='', square=True, linewidths=0.01)
+        g = sns.clustermap(dfcorr, center=0, annot=labels.values, fmt='', linewidths=0.01)
         st.pyplot()
 
     if len(gids_found) > 1 :
@@ -296,13 +321,13 @@ def plotExpressionInfo(gids_found, sample_names, all_types, avg_cols) :
     
 def selectGenes(dfgene) :
     get_all = st.sidebar.button('Get all genes')
-    limits = ['TSNE X min', 'TSNE X max', 'TSNE Y min', 'TSNE Y max']
+    limits = ['Reduced X min', 'Reduced X max', 'Reduced Y min', 'Reduced Y max']
     lims_sel = [st.sidebar.number_input(lim, value=0) for lim in limits]
     lims_all = [-9999, 9999, -9999, 9999]
     lims = lims_all if get_all else lims_sel
         
-    selected_genes = dfgene[(dfgene.tsne1 > lims[0]) & (dfgene.tsne1 < lims[1]) &
-                            (dfgene.tsne2 > lims[2]) & (dfgene.tsne2 < lims[3])]
+    selected_genes = dfgene[(dfgene.red_x > lims[0]) & (dfgene.red_x < lims[1]) &
+                            (dfgene.red_y > lims[2]) & (dfgene.red_y < lims[3])]
     
     if len(selected_genes) > 0 :
         st.header('List of selected genes in window')
@@ -310,7 +335,7 @@ def selectGenes(dfgene) :
         st.text(',\n'.join(selected_genes.geneid.values))
 
 def checkDeleteTempVects() :
-    try : os.remove('data/temp_dftsne.csv')
+    try : os.remove('data/temp_dfreduce.csv')
     except : pass
 
 #%% Main Methods
@@ -321,15 +346,15 @@ def plotData() :
     checkMakeDataDir()
     
     st.sidebar.header('Load Data')
-    csv_files = [os.path.join('data', fp) for fp in os.listdir(os.path.join(os.getcwd(), 'data')) if fp.startswith('dftsne_') and fp.endswith('.csv')]
+    csv_files = [os.path.join('data', fp) for fp in os.listdir(os.path.join(os.getcwd(), 'data')) if fp.startswith('dfreduce_') and fp.endswith('.csv')]
     if len(csv_files) == 0 :
-        st.write('No files found. Generate files in the Generate TSNE data mode.')
+        st.write('No files found. Generate files in the Generate reduced data mode.')
         return
-    file_names_nice = nat_sort([fp.replace('data/dftsne_','') for fp in csv_files])
-    file_name = 'data/dftsne_' + st.sidebar.selectbox('Select TSNE data file', file_names_nice)
+    file_names_nice = nat_sort([fp.replace('data/dfreduce_','') for fp in csv_files])
+    file_name = 'data/dfreduce_' + st.sidebar.selectbox('Select data file', file_names_nice)
     if st.sidebar.button('Delete this dataset') :
         os.remove(file_name)
-        st.success('File \'{}\' removed, please select another file.'.format(file_name.replace('data/dftsne_', '')))
+        st.success('File \'{}\' removed, please select another file.'.format(file_name.replace('data/dfreduce_', '')))
         return
     
     # Load Data
@@ -337,7 +362,7 @@ def plotData() :
     dfplot = dfgene.copy(deep=True)
     
     # Get Inputs
-    st.sidebar.header('TSNE Plot View Parameters')
+    st.sidebar.header('Plot View Parameters')
     chosen_color, norm_control = askColor(all_types)    
     log_color_scale = False if chosen_color == 'type' else st.sidebar.checkbox('Log color scale?', value=True)
     color_scale = askColorScale(chosen_color)
@@ -367,8 +392,8 @@ def plotData() :
     if not (chosen_color == 'type' or chosen_color == 'avg_type') :
         dfplot = dfplot[dfplot[chosen_color] >= min_expression_sel]
     
-    # Main TSNE plot
-    plotTSNE(dfplot, all_types, color_scale, chosen_color, gids_found, markers_found, xlims, ylims, log_color_scale)
+    # Main plot
+    plotReduced(dfplot, all_types, color_scale, chosen_color, gids_found, markers_found, xlims, ylims, log_color_scale)
     
     # Plot the expression of the genes per type
     if len(gids_found) > 0:
@@ -386,7 +411,7 @@ def plotData() :
 def readMe() :
     header.title('Streamlit App Manual')
     st.markdown("""
-            This streamlit app allows for generating and viewing TSNE plots for various data.
+            This streamlit app allows for generating and viewing reduced dimensionality plots for various data.
             
             ## File Requirements ##
             - First column must contain the list of genes, it will be renamed 'geneid'.
@@ -398,10 +423,10 @@ def readMe() :
                 - Also any of: ['-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', 'n/a', 'NA', '', '#NA', 'NULL', 'null', 'NaN', '-NaN', 'nan', '-nan', '']
             
             ## Usage Instructions ##
-            1. Start on the 'Generate TSNE data' mode
+            1. Start on the 'Generate reduced data' mode
                 - See here for info on setting TSNE parameters: <a href="https://distill.pub/2016/misread-tsne/">Guide on setting TSNE parameters</a>
             2. Save the data
-            3. Switch to 'Plot TSNE data' mode
+            3. Switch to 'Plot data' mode
             
             ### Notes: ###
             - Gene IDs must match exactly (case sensitive)
@@ -420,7 +445,13 @@ def checkMakeDataDir() :
         return
     os.mkdir('data')
 
-def reduce(npall, pca_components=0, perp=40, learning_rate=200, n_iter=1000) :    
+def umapReduce(npall, n_neighbors=15, min_dist=0.1, metric='euclidean') :
+    print('Running UMAP')
+    reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric)
+    vects = reducer.fit_transform(npall)
+    return vects
+
+def tsneReduce(npall, pca_components=0, perp=40, learning_rate=200, n_iter=1000, early_exaggeration=12) :
     if pca_components > 0 :
         pca = PCA(n_components=pca_components)
         princcomps = pca.fit_transform(npall)
@@ -429,15 +460,16 @@ def reduce(npall, pca_components=0, perp=40, learning_rate=200, n_iter=1000) :
     
     if gpu_avail :
         try :
-            tsne_vects_out = TSNECuda(n_components=2, perplexity=perp, learning_rate=learning_rate).fit_transform(princcomps)
+            tsne_vects_out = TSNECuda(n_components=2, early_exaggeration=early_exaggeration, perplexity=perp, learning_rate=learning_rate).fit_transform(princcomps)
             return tsne_vects_out
-        except :
-            pass
-    tsne = TSNE(n_components=2, n_iter=n_iter, verbose=3, perplexity=perp, learning_rate=learning_rate)
+        except Exception as e:
+            st.warning('Error using GPU, defaulting to CPU TSNE implemenation. Error message:\n\n' + str(e))
+
+    tsne = TSNE(n_components=2, n_iter=n_iter, verbose=3, perplexity=perp, method='barnes_hut', angle=0.5, early_exaggeration=early_exaggeration, learning_rate=learning_rate, n_jobs=-1)
     return tsne.fit_transform(princcomps)
 
-def genTSNE() :
-    header.title('Generate TSNE Data')
+def genData() :
+    header.title('Generate reduced dimensionality data')
     dfgene, glen = getDataRaw()
     if glen == 0 : return
     try :
@@ -454,92 +486,118 @@ def genTSNE() :
     st.info('Review inferred samples (rows) and types (columns) table below:')
     st.dataframe(dfprint)
     
-    st.sidebar.header('TSNE Run Parameters')
-    st.sidebar.markdown('<a href="https://distill.pub/2016/misread-tsne/">Guide on setting TSNE parameters</a>', unsafe_allow_html=True)
+    st.sidebar.header('Reduction Run Parameters')
+    ralgo = st.sidebar.selectbox('Reduction algorightm:', ['TSNE', 'UMAP'])
+    useUmap = ralgo == 'UMAP'    
+
+    param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://umap-learn.readthedocs.io/en/latest/parameters.html']
+    st.sidebar.markdown('<a href="{}">Guide on setting {} parameters</a>'.format(param_guide_links[useUmap], ralgo), unsafe_allow_html=True)
     remove_zeros = st.sidebar.checkbox('Remove entries with all zeros?', value=True)    
     norm_per_row = st.sidebar.checkbox('Normalize per gene (row)?', value=True) if len(avg_cols) > 2 else False
     norm_control = st.sidebar.checkbox('Normalize to control?', value=False)
     if norm_control :
         control = st.sidebar.selectbox('Select control:', all_types)
     
-    pca_comp = st.sidebar.number_input('PCA components (0 to run only TSNE)', value=0, min_value=0, max_value=len(all_types)-1, step=1)
-    perp = st.sidebar.number_input('TSNE Perplexity', value=50, min_value= 40 if gpu_avail else 2, max_value=10000, step=10)
-    learning_rate = st.sidebar.number_input('TSNE Learning Rate', value=200, min_value=50, max_value=10000, step=25)
-    if not gpu_avail : max_iterations = st.sidebar.number_input('TSNE Max Iterations', value=1000, min_value=500, max_value=2000, step=100)
-    else : max_iterations = -1
+    if not useUmap :
+        pca_comp = st.sidebar.number_input('PCA components (0 to run only TSNE)', value=0, min_value=0, max_value=len(all_types)-1, step=1)
+        perp = st.sidebar.number_input('TSNE Perplexity', value=50, min_value= 40 if gpu_avail else 2, max_value=10000, step=10)
+        learning_rate = st.sidebar.number_input('TSNE Learning Rate', value=200, min_value=50, max_value=10000, step=25)
+        exagg = st.sidebar.number_input('TSNE Early Exaggeration', value=12, min_value=0, max_value=10000, step=25)
+        if not gpu_avail : max_iterations = st.sidebar.number_input('TSNE Max Iterations', value=1000, min_value=500, max_value=2000, step=100)
+        else : max_iterations = 1000
+    else :
+        n_neighbors = st.sidebar.number_input('UMAP Number of neighbors', value=15, min_value=2, max_value=10000, step=10)
+        min_dist = st.sidebar.number_input('UMAP Minimum distance', value=0.1, min_value=0.0, max_value=1.0, step=0.1)
+        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','haversine','mahalanobis','wminkowski','seuclidean','cosine','correlation']
+        umap_metric = st.sidebar.selectbox('UMAP Distance Metric:', umap_metrics)        
     
-    if st.sidebar.button('Run TSNE reduction') :
-        status = st.header('Running TSNE reduction')        
-        dftsne = dfgene.copy(deep=True)
+    if st.sidebar.button('Run {} reduction'.format(ralgo)) :
+        status = st.header('Running {} reduction'.format(ralgo))
+        dfreduce = dfgene.copy(deep=True)
         
         if remove_zeros :
-            dftsne = dftsne.loc[(dftsne[avg_cols]!=0).any(axis=1)]        
+            dfreduce = dfreduce.loc[(dfreduce[avg_cols]!=0).any(axis=1)]        
         if norm_control or norm_per_row :
-            dftsne[avg_cols] = dftsne[avg_cols] + sys.float_info.epsilon
+            dfreduce[avg_cols] = dfreduce[avg_cols] + sys.float_info.epsilon
         if norm_control :
-            dftsne[avg_cols] = dftsne[avg_cols].div(dftsne['avg_'+control], axis=0)
+            dfreduce[avg_cols] = dfreduce[avg_cols].div(dfreduce['avg_'+control], axis=0)
         if norm_per_row :
-            dftsne[avg_cols] = dftsne[avg_cols].div(dftsne[avg_cols].sum(axis=1), axis=0)
+            dfreduce[avg_cols] = dfreduce[avg_cols].div(dfreduce[avg_cols].sum(axis=1), axis=0)
         if norm_control or norm_per_row :
-            dftsne[avg_cols] = dftsne[avg_cols].round(decimals=4)
+            dfreduce[avg_cols] = dfreduce[avg_cols].round(decimals=4)
         
-        if (dftsne[avg_cols].isna().sum().sum() > 0) :
-            st.write('!Warning! Some NA values found in data, removed all entries with NAs, see below:', dftsne[avg_cols].isna().sum())
-            dftsne = dftsne.dropna()
+        if (dfreduce[avg_cols].isna().sum().sum() > 0) :
+            st.write('!Warning! Some NA values found in data, removed all entries with NAs, see below:', dfreduce[avg_cols].isna().sum())
+            dfreduce = dfreduce.dropna()
         
-        tsne_vects_in = dftsne[avg_cols].values + sys.float_info.epsilon
-        lvects = reduce(tsne_vects_in, pca_components=pca_comp, perp=perp, learning_rate=learning_rate, n_iter=max_iterations)
-        dftsne['tsne1'] = lvects[:,0]
-        dftsne['tsne2'] = lvects[:,1]
+        data_vects_in = dfreduce[avg_cols].values + sys.float_info.epsilon
+        
+        start = time.time()
+        if not useUmap :
+            lvects = tsneReduce(data_vects_in, pca_components=pca_comp, perp=perp, learning_rate=learning_rate, n_iter=max_iterations, early_exaggeration=exagg)
+        else :
+            lvects = umapReduce(data_vects_in, n_neighbors, min_dist, umap_metric)
+        st.write('Reduction took {:0.3f} seconds'.format((time.time()-start) * 1))
+        
+        dfreduce['red_x'] = lvects[:,0]
+        dfreduce['red_y'] = lvects[:,1]
         checkMakeDataDir()
-        dftsne.round(decimals=4).to_csv('data/temp_dftsne.csv', index=False)
-    elif not os.path.exists('data/temp_dftsne.csv') :
+        dfreduce.round(decimals=4).to_csv('data/temp_dfreduce.csv', index=False)
+    elif not os.path.exists('data/temp_dfreduce.csv') :
         return
     else :
         status = st.header('Loading previous vectors')
-        dftsne = pd.read_csv('data/temp_dftsne.csv')
+        dfreduce = pd.read_csv('data/temp_dfreduce.csv')
         
-    st.sidebar.header('TSNE Quick View Options')
+    st.sidebar.header('Plot Quick View Options')
     chosen_color = st.sidebar.selectbox('Color data', ['Type'] + all_types)
     hue = 'type' if chosen_color == 'Type' else 'avg_' + chosen_color
     
     if chosen_color == 'Type' :
-        ax = sns.scatterplot(data=dftsne, x='tsne1', y='tsne2', s=5, linewidth=0.01, hue=hue)
-        ax.set(xticklabels=[], yticklabels=[], xlabel='tsne1', ylabel='tsne2')
+        ax = sns.scatterplot(data=dfreduce, x='red_x', y='red_y', s=5, linewidth=0.01, hue=hue)
+        ax.set(xticklabels=[], yticklabels=[], xlabel='{}_x'.format(ralgo), ylabel='{}_y'.format(ralgo))
         plt.subplots_adjust(top=0.98, left=0.05, right=1, bottom=0.1, hspace=0.0)
     else :
         fig, ax = plt.subplots(1)
-        plt.scatter(x=dftsne.tsne1.values, y=dftsne.tsne2.values, s=5, linewidth=0.01, c=dftsne[hue].values, norm=matplotlib.colors.LogNorm())
+        plt.scatter(x=dfreduce.red_x.values, y=dfreduce.red_y.values, s=5, linewidth=0.01, c=dfreduce[hue].values, norm=matplotlib.colors.LogNorm())
         plt.colorbar(label='Expression Level')
         plt.subplots_adjust(top=0.98, left=0.05, right=1, bottom=0.1, hspace=0.0)
         ax.set_yticklabels([])
         ax.set_xticklabels([])
-        ax.set_xlabel('tsne1')
-        ax.set_ylabel('tsne2')
+        ax.set_xlabel('red_x')
+        ax.set_ylabel('red_y')
     
-    status.header('TSNE data quick view:')
+    status.header('Data plot quick view:')
     st.pyplot()
-    st.write('Total number of points: ', len(dftsne))
+    st.write('Total number of points: ', len(dfreduce))
     
-    st.sidebar.header('TSNE Data Save')
-    suggested_fn = '{}p'.format(perp)
-    suggested_fn += '_No0' if remove_zeros else ''
-    suggested_fn += '_NR' if norm_per_row else ''
-    suggested_fn += '_NC-'+control if norm_control else ''
+    st.sidebar.header('Reduced Data Save')
+    
+    if not useUmap :
+        suggested_fn = '{}p'.format(perp)
+        suggested_fn += '_No0' if remove_zeros else ''
+        suggested_fn += '_NR' if norm_per_row else ''
+        suggested_fn += '_NC-'+control if norm_control else ''
+    else :
+        suggested_fn = '{}n{}m'.format(n_neighbors, int(100*np.round(min_dist, 2)))
+        suggested_fn += '_met-{}'.format(umap_metric) if not umap_metric == 'euclidean' else ''
+        suggested_fn += '_No0' if remove_zeros else ''
+        suggested_fn += '_NR' if norm_per_row else ''
+        suggested_fn += '_NC-'+control if norm_control else ''
+        
     file_name = removeinvalidchars(st.sidebar.text_input('Data file name:', value=suggested_fn))   
-    print(file_name)
-    if len(file_name) > 0 and st.sidebar.button('Save TSNE data') :
+    if len(file_name) > 0 and st.sidebar.button('Save data file') :
         
         dfsave = dfgene.copy()
-        dfsave = pd.merge(dfsave, dftsne[['geneid', 'tsne1', 'tsne2']], on='geneid', how='right')
+        dfsave = pd.merge(dfsave, dfreduce[['geneid', 'red_x', 'red_y']], on='geneid', how='right')
         dfsave = dfsave.round(decimals=3)
         checkMakeDataDir()
-        dfsave.to_csv('data/dftsne_' + file_name + '.csv', index=False)
+        dfsave.to_csv('data/dfreduce_' + file_name + '.csv', index=False)
         st.success('File \'{}\' saved!'.format(file_name))
 
 #%% Main program execution
-modeOptions = ['Read Me', 'Generate TSNE data', 'Plot TSNE data']
+modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
-tabMethods = [readMe, genTSNE, plotData]
+tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
