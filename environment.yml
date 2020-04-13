@@ -1,4 +1,4 @@
-name: genes
+name: genestest
 channels:
   - cannylab
   - conda-forge
@@ -18,8 +18,38 @@ dependencies:
   - cudatoolkit=10.1
   - cudnn=7.6.5
   - cupti=10.1
-  - tsnecuda=2.1.0
+  - tsnecuda=2.1.0 [cuda101]
   - pip:
     - streamlit=0.57
 
+
+  - natsort==7.0.1
+  - pynndescent==0.4.7
+  - tsnecuda=2.1.0 [cuda101]
+
 prefix: /home/starstorms/anaconda3/envs/shape
+
+
+  - cuda101=1.0=h589bae5_0
+  - cudatoolkit=10.1.243=h6bb024c_0
+  - cudnn=7.6.5=cuda10.1_0
+  - cupti=10.1.168=0
+
+  - matplotlib=3.1.3=py37_0
+  - matplotlib-base=3.1.3=py37hef1b27d_0
+  - numba=0.48.0=py37hb3f55d8_0
+  - numpy-base=1.18.1=py37h2f8d375_1
+  - pandas=1.0.3=py37h0573a6f_0
+  - pip=20.0.2=py37_1
+  - plotly=4.5.2=py_0
+  - python=3.7.7=hcf32534_0_cpython
+  - scikit-learn=0.22.2.post1=py37hcdab131_0
+  - scipy=1.4.1=py37ha3d9a3c_3
+  - seaborn=0.10.0=py_0
+  - umap-learn=0.4.1=py37hc8dfbb8_0
+  - pip:
+    - natsort==7.0.1
+    - numpy==1.18.0
+    - pynndescent==0.4.7
+    - streamlit==0.57.2
+    - tsnecuda==2.1.0
