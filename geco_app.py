@@ -350,7 +350,8 @@ def checkDeleteTempVects() :
     except : pass
 
 def deleteOldSessionData() :
-    command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
+    # command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
+    command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -exec rm {} \\;'
     subprocess.Popen(command, shell=True)
 
 #%% Main Methods
@@ -705,8 +706,4 @@ mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 
-# deleteOldSessionData()
-
-st.write('Gonna write some files...')
-
-st.write(list(os.walk('.')))
+deleteOldSessionData()
