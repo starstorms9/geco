@@ -1,4 +1,4 @@
-streamlit==0.57
+streamlit
 plotly==4.6
 seaborn==0.10
 natsort==7.0
@@ -9,10 +9,8 @@ numpy==1.18
 pandas==1.0.3
 matplotlib==3.1
 
-# conda install -c conda-forge umap-learn 
-# OR
-numba==0.48
-pynndescent==0.4
+numba==0.50
+pynndescent==0.4.3
 umap-learn==0.4
 
 # cuda101==1.0
