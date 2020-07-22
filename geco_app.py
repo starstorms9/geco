@@ -352,7 +352,7 @@ def deleteOldSessionData() :
     command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -exec rm {} \\;'
     command_rmEmptyDir = 'find *_data* -empty -type d -delete'
     subprocess.Popen(command_delOldData, shell=True)
-    subprocess.Popen(command_rmEmptyDir, shell=True)
+    # subprocess.Popen(command_rmEmptyDir, shell=True)
 
 #%% Main Methods
 def plotData() :
@@ -707,8 +707,5 @@ tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 
 deleteOldSessionData()
-
-
-st.write('Gonna write some files...')
 
 st.write(list(os.walk('.')))
