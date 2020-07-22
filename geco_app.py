@@ -348,11 +348,10 @@ def checkDeleteTempVects() :
     except : pass
 
 def deleteOldSessionData() :
-    # command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
     command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
     command_rmEmptyDir = 'find *_data* -empty -type d -delete'
     subprocess.Popen(command_delOldData, shell=True)
-    # subprocess.Popen(command_rmEmptyDir, shell=True)
+    subprocess.Popen(command_rmEmptyDir, shell=True)
 
 #%% Main Methods
 def plotData() :
@@ -701,11 +700,9 @@ def genData() :
 
 #%% Main program execution
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
+st.sidebar.image('GECO_logo.jpg', use_column_width=True)
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
-
 deleteOldSessionData()
-
-st.write(list(os.walk('.')))
