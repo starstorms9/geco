@@ -344,15 +344,17 @@ def selectGenes(dfgene) :
         st.header('List of selected genes in window')
         st.markdown(getTableDownloadLink(selected_genes), unsafe_allow_html=True)
         st.text(',\n'.join(selected_genes.geneid.values))
-
+        
 def checkDeleteTempVects() :
     try : os.remove(datadir / 'temp_dfreduce.csv')
     except : pass
 
 def deleteOldSessionData() :
     # command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
-    command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -exec rm {} \\;'
-    subprocess.Popen(command, shell=True)
+    command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -exec rm {} \\;'
+    command_rmEmptyDir = 'find *_data* -empty -type d -delete'
+    subprocess.Popen(command_delOldData, shell=True)
+    subprocess.Popen(command_rmEmptyDir, shell=True)
 
 #%% Main Methods
 def plotData() :
