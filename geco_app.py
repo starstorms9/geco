@@ -40,7 +40,6 @@ def setWideModeHack():
     st.markdown( f""" <style> .reportview-container .main .block-container{{ {max_width_str} }} </style> """, unsafe_allow_html=True)
 
 
-
 def get_session_id():
     # Hack to get the session object from Streamlit.
 
@@ -64,6 +63,7 @@ def get_session_id():
     return id(this_session)
 
 st.write('Session ID is : {}'.format(get_session_id()))
+
 
 def get_table_download_link(df):
     """Generates a link allowing the data in a given panda dataframe to be downloaded
