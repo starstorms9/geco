@@ -707,3 +707,8 @@ tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 
 deleteOldSessionData()
+
+
+st.write('Gonna write some files...')
+
+st.write(list(os.walk('.')))
