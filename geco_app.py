@@ -58,8 +58,6 @@ def getSessionID():
 
 datadir = Path(str(getSessionID()) + '_data')
 
-st.write('Datadir is : ', datadir)
-
 def getTableDownloadLink(df):
     """Generates a link allowing the data in a given panda dataframe to be downloaded
     in:  dataframe
