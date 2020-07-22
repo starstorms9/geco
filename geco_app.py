@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
 from pathlib import Path
+import subprocess
 
 import streamlit.ReportThread as ReportThread
 from streamlit.server.Server import Server
@@ -347,6 +348,10 @@ def selectGenes(dfgene) :
 def checkDeleteTempVects() :
     try : os.remove(datadir / 'temp_dfreduce.csv')
     except : pass
+
+def deleteOldSessionData() :
+    command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
+    subprocess.Popen(command, shell=True)
 
 #%% Main Methods
 def plotData() :
@@ -699,3 +704,7 @@ st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
+
+# deleteOldSessionData()
+
+st.write(list(os.walk('.')))
