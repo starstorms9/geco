@@ -514,7 +514,7 @@ def readMe() :
         
         15. The gene displayed can be adjusted by filtering as specified earlier or by zooming in/out on the plot. Zooming in can be performed by highlighting an area or hovering over the plot until a set of buttons appears in the top right corner (including +/- buttons). Double clicking on the plot returns to the default view. Hovering over a data point will display the gene and information on the expression in samples and the current color scale information. 
         
-        ### Troubleshooting/FAQ 
+        ### Troubleshooting / FAQ 
         
         *File uploader utility says ‘files are not allowed’.*
         - Check that the file ends in a .csv and is a simple comma separated table.
@@ -706,5 +706,7 @@ tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 
 # deleteOldSessionData()
+
+st.write('Gonna write some files...')
 
 st.write(list(os.walk('.')))
