@@ -18,6 +18,7 @@ import natsort as ns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
+from pathlib import Path
 
 import streamlit.ReportThread as ReportThread
 from streamlit.server.Server import Server
@@ -39,14 +40,10 @@ def setWideModeHack():
     max_width_str = f"max-width: 1200px;"
     st.markdown( f""" <style> .reportview-container .main .block-container{{ {max_width_str} }} </style> """, unsafe_allow_html=True)
 
-
-def get_session_id():
+def getSessionID():
     # Hack to get the session object from Streamlit.
-
     ctx = ReportThread.get_report_ctx()
-
-    this_session = None
-    
+    this_session = None    
     current_server = Server.get_current()
     session_infos = Server.get_current()._session_info_by_id.values()
 
@@ -55,17 +52,14 @@ def get_session_id():
         if (not hasattr(s, '_main_dg') and s.enqueue == ctx.enqueue) :
             this_session = s
 
-    if this_session is None:
-        raise RuntimeError(
-            "Oh noes. Couldn't get your Streamlit Session object"
-            'Are you doing something fancy with threads?')
-
+    if this_session is None: raise RuntimeError("Oh noes. Couldn't get your Streamlit Session object")
     return id(this_session)
 
-st.write('Session ID is : {}'.format(get_session_id()))
+datadir = Path(str(getSessionID()) + '_data')
 
+st.write('Datadir is : ', datadir)
 
-def get_table_download_link(df):
+def getTableDownloadLink(df):
     """Generates a link allowing the data in a given panda dataframe to be downloaded
     in:  dataframe
     out: href string
@@ -347,11 +341,11 @@ def selectGenes(dfgene) :
 
     if len(selected_genes) > 0 :
         st.header('List of selected genes in window')
-        st.markdown(get_table_download_link(selected_genes), unsafe_allow_html=True)
+        st.markdown(getTableDownloadLink(selected_genes), unsafe_allow_html=True)
         st.text(',\n'.join(selected_genes.geneid.values))
 
 def checkDeleteTempVects() :
-    try : os.remove('data/temp_dfreduce.csv')
+    try : os.remove(datadir / 'temp_dfreduce.csv')
     except : pass
 
 #%% Main Methods
@@ -361,16 +355,17 @@ def plotData() :
     checkDeleteTempVects()
     checkMakeDataDir()
 
-    st.sidebar.header('Load Data')
-    csv_files = [os.path.join('data', fp).replace('\\','/') for fp in os.listdir(os.path.join(os.getcwd(), 'data')) if fp.startswith('dfreduce_') and fp.endswith('.csv')]
+    csv_files = [os.path.join(datadir, fp).replace('\\','/') for fp in os.listdir(os.path.join(os.getcwd(), datadir)) if fp.startswith('dfreduce_') and fp.endswith('.csv')]
     if len(csv_files) == 0 :
         st.write('No files found. Generate files in the Generate reduced data mode.')
         return
-    file_names_nice = nat_sort([fp.replace('data/dfreduce_','') for fp in csv_files])
-    file_name = 'data/dfreduce_' + st.sidebar.selectbox('Select data file', file_names_nice)
+    
+    st.sidebar.header('Load Data')
+    file_names_nice = nat_sort([fp.replace( str(datadir / 'dfreduce_'),'') for fp in csv_files])
+    file_name = str(datadir / 'dfreduce_') + st.sidebar.selectbox('Select data file', file_names_nice)
     if st.sidebar.button('Delete this dataset') :
         os.remove(file_name)
-        st.success('File \'{}\' removed, please select another file.'.format(file_name.replace('data/dfreduce_', '')))
+        st.success('File \'{}\' removed, please select another file.'.format(file_name.replace( str(datadir / 'dfreduce_'), '')))
         return
 
     # Load Data
@@ -428,105 +423,124 @@ def plotData() :
     selectGenes(dfplot)
 
 def readMe() :
-    header.title('Streamlit App Manual')
-    st.markdown("""
-            This streamlit app allows for generating and viewing reduced dimensionality plots for various data.
-
-            ## File Requirements ##
-            - First column must contain the list of genes, it will be renamed 'geneid'.
-            - No negative numbers or previous transformations (like log or normalization), use raw information.
-            - Blank gene expression example file here
-            - Blank gene marker example file here
-            - No index column in csv (1, 2, 3, ...)
-            - 'NA' entries will be interpreted as unknowns and removed
-                - Also any of: ['-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', 'n/a', 'NA', '', '#NA', 'NULL', 'null', 'NaN', '-NaN', 'nan', '-nan', '']
-
-            ## Usage Instructions ##
-            1. Start on the 'Generate reduced data' mode
-                - See here for info on setting TSNE parameters: <a href="https://distill.pub/2016/misread-tsne/">Guide on setting TSNE parameters</a>
-            2. Save the data
-            3. Switch to 'Plot data' mode
-
-            ### Notes: ###
-            - Gene IDs must match exactly (case sensitive)
-            - If you run into odd persistent errors hit 'c' and clear cache and then hit 'r' to reload.
-
-            ### Suggested color scales: ###
-            - Blackbody
-            - Electric
-            - Jet
-            - Thermal
-
-            """, unsafe_allow_html=True )
+    header.title('GECO - README')
+    st.markdown("""           
+        Welcome to GECO (Gene Expression Clustering Optimization), the straightforward, user friendly [Streamlit] app to visualize and investigate data patterns with non-linear reduced dimensionality plots.
         
+        Although developed for bulk RNA-seq data, it will analyze any .csv data matrix with sample names (columns) and type (rows) [type = genes, protein, any other unique ID]. The output is an interactive and customizable t-SNE/UMAP. This visualization is intended to supplement more traditional statistical differential analysis pipelines (for example DESeq2 for bulk RNA-seq) and confirm or also reveal new patterns. 
+        
+        ### File Upload
+        *** (required) Data Matrix. ***
+        * Must be supplied as a .csv file.
+        * The first column should contain the unique IDs for this dataset (genes, isoforms, protein, or any other identifier) which will be renamed ‘geneid’ in the program. Each unique ID should have ‘expression’ data listed in each row that corresponds to each sample. 
+        * Sample names must be listed at the top of each columns, with biological replicates being indicated by ‘_#’ following sample name. Biological replicates are averaged during the analysis and the number of biological replicates does not need to match. For example, samples are named ‘WT’, ‘KO’, and ‘OE’ with three biological replicates each, the column names should be as shown in the example below.
+        * If no ‘_#’ columns are found for a given sample name but there are duplicate column names, they will automatically have sample numbers appended.
+        No index column (1,2,3,4) or other columns with additional information. 
+        'NA' entries will be interpreted as unknowns and those entire rows will be removed
+        * Also any of: ['-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', 'n/a', 'NA', '', '#NA', 'NULL', 'null', 'NaN', '-NaN', 'nan', '-nan', '']
+        * If you want to include these rows with non numeric values you must impute the NA values manually and replace them. This can be done by 0’ing them out, averaging with other samples, etc.
+        
+        
+        *** (optional) Curated Markers List. ***
+        * Must be supplied as a .csv file.
+        * Each column should start with a descriptive title (will appear in a drop-down list). Below the title will be a list of unique IDs (that overlap with the provided data matrix). 
+        * Multiple curated lists can be provided by listing them next to each other, one per column. Do not skip columns, and do not use different excel sheet tabs. 
+        * This is capital sensitive, so make sure your capitalization is consistent. A minimal example is provided below.  
             
-    st.markdown("""
-            # Dillinger
-            
-            Dillinger is a cloud-enabled, mobile-ready, offline-storage, AngularJS powered HTML5 Markdown editor.
-            
-              - Type some Markdown on the left
-              - See HTML in the right
-              - Magic
-            
-            # New Features!
-            
-              - Import a HTML file and watch it magically convert to Markdown
-              - Drag and drop images (requires your Dropbox account be linked)
-            
-            
-            You can also:
-              - Import and save files from GitHub, Dropbox, Google Drive and One Drive
-              - Drag and drop markdown and HTML files into Dillinger
-              - Export documents as Markdown, HTML and PDF
-            
-            Markdown is a lightweight markup language based on the formatting conventions that people naturally use in email.  As [John Gruber] writes on the [Markdown site][df1]
-            
-            > The overriding design goal for Markdown's
-            > formatting syntax is to make it as readable
-            > as possible. The idea is that a
-            > Markdown-formatted document should be
-            > publishable as-is, as plain text, without
-            > looking like it's been marked up with tags
-            > or formatting instructions.
-            
-            This text you see here is *actually* written in Markdown! To get a feel for Markdown's syntax, type some text into the left window and watch the results in the right.
-            
-            ### Tech
-            
-            Dillinger uses a number of open source projects to work properly:
-            
-            * [AngularJS] - HTML enhanced for web apps!
-            * [Ace Editor] - awesome web-based text editor
-            * [markdown-it] - Markdown parser done right. Fast and easy to extend.
-            * [Twitter Bootstrap] - great UI boilerplate for modern web apps
-            * [node.js] - evented I/O for the backend
-            * [Express] - fast node.js network app framework [@tjholowaychuk]
-            * [Gulp] - the streaming build system
-            * [Breakdance](https://breakdance.github.io/breakdance/) - HTML to Markdown converter
-            * [jQuery] - duh
-            
-            And of course Dillinger itself is open source with a [public repository][dill]
-             on GitHub.
-            
-            ### Installation
-            
-            Dillinger requires [Node.js](https://nodejs.org/) v4+ to run.
-            
-            Install the dependencies and devDependencies and start the server.
-            
-            ```sh
-            $ cd dillinger
-            $ npm install -d
-            $ node app
-            ```
+        
+        ### Usage Instructions 
+        **Generate reduced dimensionality data**
+        
+        1. Start on the ‘Generate reduced data’ mode (May need to hit the ‘>’ in top left to reveal the sidebar menu with Select Mode option.)
+        
+        2. Upload data matrix in the format described above. Review the inferred sample information – if it is not correct, update the .csv file accordingly.
+        
+        3. Set-up Reduction Run Parameters
+            - See info [here][1] for setting t-SNE parameters
+            - See info [here][2] for setting UMAP parameters
+            - *Three optional boxes can be checked:*
+                        
+                1. *Remove entries with all zeros*
+                
+                2. *Normalize per gene (row)* – this divides each entry of a given row by the sum of the entire row and thus allows for investigation of trends across samples independent of overall expression level.
+                
+                3. *Normalize to control* – This normalizes each row to the control (a drop-down menu will allow you to select the control). This allows for investigation of trends relating to the fold change compared to a control. 
+        
+        4. Run the reduction. This could take a bit of time depending on the size of the data. You will see ‘running’ in the middle of the app.
+        
+        5. Some preliminary data and manipulation are available. Enter a filename and save the data.
+            - *Note that using the same filename as one that already exists will overwrite the file.*
+        
+        **Visualize the data**
+        
+        6. Switch to ‘Plot reduced data’ mode 
+        
+        7. Select the desired saved dataset from the drop-down list under ‘Load Data’.
+        
+        8. Each dot/data point on the t-SNE/UMAP corresponds to one gene/protein/other unique ID depending on the input data. Using the ‘Color Data’ pull down menu the coloring of these data points can be altered in several ways:
+            - Sample name = Average expression based on each sample type – one at a time. 
+            - Type = each data point is assigned the color of the sample type that has the highest expression for that gene/protein/other unique ID.
+            - Type average = Color scale set to range of expression and each data point is colored for the average of the sample type that has the highest expression.
+            - Normalize to control = Color scale set to range of fold change of control over maximum sample type expression (color corresponding to highest expression will mark data points that are highest in the selected control relative to other sample types). 
+        
+        9. Some additional color/display options:
+            - Log scale [only for some color data options] – log transforms the scale of colors and is useful if there are some prominent outliers over shadowing other data points. 
+            - Continuous color scale [only for some color data options] - uses a continuous color gradient across discrete types to show transitions from one sample to the next. Particularly useful for time course or drug treatment when sample types are related. 
+            - Reverse color scale switches the order of the colors.
+            - Sequential/Discrete color scales changes the overall colors used. 
+        
+        10. Additional filtering steps:
+            - Minimum assigned type expression removes data points with low expression based on the number in the filter. Filters based on the ‘assigned type’ which is the sample with the maximum expression. 
+            - Min expression of type [only for average of sample type color option] removes data points below a specified threshold for the specific sample type selected to colorize the data. 
+            - Fold change filter [only for normalize to control option] removes data points below a specified cut-off between designated control and non-control. 
+        
+        11. ‘Gene Markers to Show’ will highlight the specified genes/proteins/unique IDs.
+            - Curated markers list can be uploaded as a .csv file (genes in a column with descriptive header – files with multiple columns are accepted; see description in file upload format). The descriptive header will be used to select which marker gene list should be displayed. These will be highlighted on the plot with an ID dot which is a large dot with a black outline. 
+            - Gene IDs input list which will be highlighted with an ID dot that is a large dot with a black outline.  
+            - This is case sensitive and must match the given dataset – if a gene/protein/unique ID is not found it will not be displayed (no warning/error message), but other matching IDs from the list will be displayed.
+            - The ID dot will be a large circle appearing on the plot behind the data point (depending on your color scale you may need to adjust to see it if it is in a dense area). A key ‘Genes’ and/or ‘Markers’ will appear on the bottom left corner. By clicking it you will hide the circles while preserving the gene list. 
+        12. Once at least one gene has been correctly entered in the Gene ID box a bar graph will appear below the t-SNE/UMAP and plot the gene across the samples. If more than one gene has been entered the one displayed in the bar graph can be changed using the drop down ‘Gene to bar plot’ menu. 
+        
+        13. Once at least two genes have been correctly entered in the Gene ID box two additional displays will appear:
+            - A clustermap showing the correlations of the selected genes will appear below the bar graph. This will display all of the genes and calculate a correlation coefficient showing an asterisk for a correlation or anti-correlation that is significant.  
+            - An expression heatmap of the specified genes across all samples. This is by default normalized by gene but the box that appears can be un-checked to disable this.
+        
+        14. Under the ‘Filtered Gene Download’ there is a ‘Get all genes’ button that will print a list of all of the genes/proteins/unique IDs in the dataset. To print a specified cluster of genes type in the window of x and y coordinates and all genes from that specific range will be printed (with any plotting filters applied). Once the gene list is printed to the screen it can be downloaded (add the correct .csv extension to the end of the file name before opening).
+        
+        15. The gene displayed can be adjusted by filtering as specified earlier or by zooming in/out on the plot. Zooming in can be performed by highlighting an area or hovering over the plot until a set of buttons appears in the top right corner (including +/- buttons). Double clicking on the plot returns to the default view. Hovering over a data point will display the gene and information on the expression in samples and the current color scale information. 
+        
+        ### Troubleshooting/FAQ 
+        
+        *File uploader utility says ‘files are not allowed’.*
+        - Check that the file ends in a .csv and is a simple comma separated table.
+        
+        Odd persistent issues with the app.*
+        - You can soft reboot the app by hitting ‘c’ and ‘clear cache’ and then hit ‘r’ to reload. 
+        
+        *TSNE takes a long time to run, how can I make it faster?*
+        - To reduce the runtime of the t-SNE algorithm a GPU can be used. This requires a CUDA enabled graphics card (most Nvidia GPU’s), a Linux based system, and a more complex installation. However, using a GPU will reduce the t-SNE runtime down to only a few seconds for even very large datasets.
+        
+        *What correlation metric is used for the clustermap?*
+        - A Pearson r correlation test is used. More info [here][3].
+        
+        *What are some suggested color scales?*
+        - Blackbody
+        - Electric
+        - Jet
+        - Thermal         
+        
+        [Streamlit]: <https://www.streamlit.io/>
+        [1]: <https://distill.pub/2016/misread-tsne/>
+        [2]: <https://umap-learn.readthedocs.io/en/latest/parameters.html>
+        [3]: <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>
+        
             """, unsafe_allow_html=True )
     
 
 def checkMakeDataDir() :
-    if os.path.exists('data') :
+    if os.path.exists(datadir) :
         return
-    os.mkdir('data')
+    os.mkdir(datadir)
 
 def umapReduce(npall, n_neighbors=15, min_dist=0.1, metric='euclidean') :
     print('Running UMAP...')
@@ -571,7 +585,7 @@ def genData() :
     st.dataframe(dfprint)
 
     st.sidebar.header('Reduction Run Parameters')
-    ralgo = st.sidebar.selectbox('Reduction algorightm:', ['TSNE', 'UMAP'])
+    ralgo = st.sidebar.selectbox('Reduction algorightm:', ['UMAP', 'TSNE'])
     useUmap = ralgo == 'UMAP'
 
     param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://umap-learn.readthedocs.io/en/latest/parameters.html']
@@ -626,12 +640,12 @@ def genData() :
         dfreduce['red_x'] = lvects[:,0]
         dfreduce['red_y'] = lvects[:,1]
         checkMakeDataDir()
-        dfreduce.round(decimals=4).to_csv('data/temp_dfreduce.csv', index=False)
-    elif not os.path.exists('data/temp_dfreduce.csv') :
+        dfreduce.round(decimals=4).to_csv(datadir / 'temp_dfreduce.csv', index=False)
+    elif not os.path.exists(datadir / 'temp_dfreduce.csv') :
         return
     else :
         status = st.header('Loading previous vectors')
-        dfreduce = pd.read_csv('data/temp_dfreduce.csv')
+        dfreduce = pd.read_csv(datadir / 'temp_dfreduce.csv')
 
     st.sidebar.header('Plot Quick View Options')
     chosen_color = st.sidebar.selectbox('Color data', ['Type'] + all_types)
@@ -676,7 +690,7 @@ def genData() :
         dfsave = pd.merge(dfsave, dfreduce[['geneid', 'red_x', 'red_y']], on='geneid', how='right')
         dfsave = dfsave.round(decimals=3)
         checkMakeDataDir()
-        dfsave.to_csv('data/dfreduce_' + file_name + '.csv', index=False)
+        dfsave.to_csv( str(datadir / 'dfreduce_') + file_name + '.csv', index=False)
         st.success('File \'{}\' saved!'.format(file_name))
 
 #%% Main program execution
