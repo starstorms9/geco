@@ -349,7 +349,7 @@ def checkDeleteTempVects() :
 
 def deleteOldSessionData() :
     # command = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
-    command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -exec rm {} \\;'
+    command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
     command_rmEmptyDir = 'find *_data* -empty -type d -delete'
     subprocess.Popen(command_delOldData, shell=True)
     # subprocess.Popen(command_rmEmptyDir, shell=True)
