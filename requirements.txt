@@ -22,3 +22,4 @@ umap-learn==0.4
 
 # tsnecuda==2.1
 # conda install tsnecuda cuda101 -c cannylab
+
