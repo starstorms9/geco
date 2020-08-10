@@ -48,7 +48,11 @@ def getSessionID():
     current_server = Server.get_current()
     session_infos = Server.get_current()._session_info_by_id.values()
 
+    st.write(current_server.__dict__)
+    st.write(session_infos)
+
     for session_info in session_infos:
+        st.write(session_info.__dict__)
         s = session_info.session
         if (not hasattr(s, '_main_dg') and s.enqueue == ctx.enqueue) :
             this_session = s
@@ -183,11 +187,12 @@ def getFile(title, sidebar=False, dedupe_headers=True) :
     return df, length
 
 def askColor(all_types) :
-    color_indices = all_types + ['Type', 'Type Average', 'Normalized to control (select)']
+    extra_color_indices = ['Assigned type', 'Average expression of assigned type', 'Enrichment in type (select)']
+    color_indices = ['Expression of {}'.format(typ) for typ in all_types] + extra_color_indices
     color_nums = ['avg_'+typ for typ in all_types] + ['type', 'avg_type', 'norm_control']
     chosen_color = color_nums[ color_indices.index(st.sidebar.selectbox('Color Data', color_indices))]
     if chosen_color == 'norm_control' :
-        control = st.sidebar.selectbox('Select control:', all_types)
+        control = st.sidebar.selectbox('Select type for enrichment:', all_types)
         return chosen_color, 'avg_' + control
     return chosen_color, None
 
@@ -376,7 +381,7 @@ def plotData() :
     # Load Data
     dfgene, all_types, sample_names, avg_cols = getDataPlot(file_name)
     dfplot = dfgene.copy(deep=True)
-
+    
     # Get Inputs
     st.sidebar.header('Plot View Parameters')
     chosen_color, norm_control = askColor(all_types)
@@ -391,12 +396,11 @@ def plotData() :
         dfplot['norm_control'] = dfplot['norm_control'].replace(-np.inf, dfplot['norm_control'].max())
 
     avg_typ_min, avg_typ_max = min(0.0,float(dfplot.avg_type.min())), float(dfplot.avg_type.max())
-    min_expression_typ = st.sidebar.number_input('Min assigned type expression to show:', min_value = avg_typ_min, value = avg_typ_min, max_value = avg_typ_max, step=0.1)
+    min_expression_typ = st.sidebar.number_input('Min expression of assigned type to show:', min_value = avg_typ_min, value = avg_typ_min, max_value = avg_typ_max, step=0.1)
 
     if not (chosen_color == 'type' or chosen_color == 'avg_type') :
         avg_sel_min, avg_sel_max = min(0.0,float(dfplot[chosen_color].min())),  float(dfplot[chosen_color].max())
-        # sel_min_title = 'Min normalized % of {} to show'.format(norm_control[4:]) if chosen_color == 'norm_control' else 'Min expression of {} to show'.format(chosen_color[4:])
-        sel_min_title = 'Fold change of control over average of non control:' if chosen_color == 'norm_control' else 'Min expression of {} to show:'.format(chosen_color[4:])
+        sel_min_title = 'Fold change of selected type over average of other types:' if chosen_color == 'norm_control' else 'Min expression of {} to show:'.format(chosen_color[4:])
         min_expression_sel = None if (chosen_color == 'type' or chosen_color == 'avg_type') else st.sidebar.number_input(sel_min_title, min_value = avg_sel_min, value = avg_sel_min, max_value=avg_sel_max, step=0.01 if chosen_color == 'norm_control' else 0.1)
 
     st.sidebar.header('Gene Markers to Show')
@@ -596,8 +600,14 @@ def genData() :
     param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://umap-learn.readthedocs.io/en/latest/parameters.html']
     st.sidebar.markdown('<a href="{}">Guide on setting {} parameters</a>'.format(param_guide_links[useUmap], ralgo), unsafe_allow_html=True)
     remove_zeros = st.sidebar.checkbox('Remove entries with all zeros?', value=True)
-    norm_per_row = st.sidebar.checkbox('Normalize per gene (row)?', value=True) if len(avg_cols) > 2 else False
-    norm_control = st.sidebar.checkbox('Normalize to control?', value=False)
+    
+    if len(avg_cols) > 2 :
+        norm_per_row = st.sidebar.checkbox('Normalize per gene (row)?', value=True) 
+        norm_control = st.sidebar.checkbox('Normalize to control?', value=False)
+    else :
+        norm_per_row, norm_control = False, False
+        st.sidebar.text('Cannot normalize per row or control with only 2 types')    
+    
     if norm_control :
         control = st.sidebar.selectbox('Select control:', all_types)
 
@@ -653,7 +663,8 @@ def genData() :
         dfreduce = pd.read_csv(datadir / 'temp_dfreduce.csv')
 
     st.sidebar.header('Plot Quick View Options')
-    chosen_color = st.sidebar.selectbox('Color data', ['Type'] + all_types)
+    form_func = lambda typ : 'Expression of {}'.format(typ) if typ != 'Type' else typ
+    chosen_color = st.sidebar.selectbox('Color data', ['Type'] + all_types, format_func=form_func)
     hue = 'type' if chosen_color == 'Type' else 'avg_' + chosen_color
 
     if chosen_color == 'Type' :
@@ -688,9 +699,8 @@ def genData() :
         suggested_fn += '_NR' if norm_per_row else ''
         suggested_fn += '_NC-'+control if norm_control else ''
 
-    file_name = removeinvalidchars(st.sidebar.text_input('Data file name:', value=suggested_fn))
+    file_name = removeinvalidchars(st.sidebar.text_input('Data file name:', value=suggested_fn, max_chars=150))
     if len(file_name) > 0 and st.sidebar.button('Save data file') :
-
         dfsave = dfgene.copy()
         dfsave = pd.merge(dfsave, dfreduce[['geneid', 'red_x', 'red_y']], on='geneid', how='right')
         dfsave = dfsave.round(decimals=3)
