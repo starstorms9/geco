@@ -51,6 +51,7 @@ def getSessionID():
     st.write(current_server.__dict__)
     st.write(session_infos)
 
+
     for session_info in session_infos:
         st.write(session_info.__dict__)
         s = session_info.session
