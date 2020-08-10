@@ -56,6 +56,7 @@ def getSessionID():
         s = session_info.session
         if (not hasattr(s, '_main_dg') and s.enqueue == ctx.enqueue) :
             this_session = s
+            
 
     if this_session is None: raise RuntimeError("Oh noes. Couldn't get your Streamlit Session object")
     return id(this_session)
