@@ -48,11 +48,11 @@ def getSessionID():
     current_server = Server.get_current()
     session_infos = Server.get_current()._session_info_by_id.values()
 
-    st.write(current_server.__dict__)
-    st.write(session_infos)
+    # st.write(current_server.__dict__)
+    # st.write(session_infos)
 
     for session_info in session_infos:
-        st.write(session_info.__dict__)
+        # st.write(session_info.__dict__)
         s = session_info.session
         if (not hasattr(s, '_main_dg') and s.enqueue == ctx.enqueue) :
             this_session = s
