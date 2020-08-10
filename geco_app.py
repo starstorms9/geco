@@ -602,19 +602,29 @@ def genData() :
     st.sidebar.markdown('<a href="{}">Guide on setting {} parameters</a>'.format(param_guide_links[useUmap], ralgo), unsafe_allow_html=True)
     remove_zeros = st.sidebar.checkbox('Remove entries with all zeros?', value=True)
     
+    if len(avg_cols) > 2 :
+        norm_per_row = st.sidebar.checkbox('Normalize per gene (row)?', value=True) 
+        norm_control = st.sidebar.checkbox('Normalize to control?', value=False)
+    else :
+        norm_per_row, norm_control = False, False
+        st.sidebar.text('Cannot normalize per row or control with only 2 types')    
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    if norm_control :
+        control = st.sidebar.selectbox('Select control:', all_types)
+
+    if not useUmap :
+        pca_comp = st.sidebar.number_input('PCA components (0 to run only TSNE)', value=0, min_value=0, max_value=len(all_types)-1, step=1)
+        perp = st.sidebar.number_input('TSNE Perplexity', value=50, min_value= 40 if gpu_avail else 2, max_value=10000, step=10)
+        learning_rate = st.sidebar.number_input('TSNE Learning Rate', value=200, min_value=50, max_value=10000, step=25)
+        exagg = st.sidebar.number_input('TSNE Early Exaggeration', value=12, min_value=0, max_value=10000, step=25)
+        if not gpu_avail : max_iterations = st.sidebar.number_input('TSNE Max Iterations', value=1000, min_value=500, max_value=2000, step=100)
+        else : max_iterations = 1000
+    else :
+        n_neighbors = st.sidebar.number_input('UMAP Number of neighbors', value=15, min_value=2, max_value=10000, step=10)
+        min_dist = st.sidebar.number_input('UMAP Minimum distance', value=0.1, min_value=0.0, max_value=1.0, step=0.1)
+        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','haversine','mahalanobis','wminkowski','seuclidean','cosine','correlation']
+        umap_metric = st.sidebar.selectbox('UMAP Distance Metric:', umap_metrics)
+        
     if st.sidebar.button('Run {} reduction'.format(ralgo)) :
         status = st.header('Running {} reduction'.format(ralgo))
         dfreduce = dfgene.copy(deep=True)
