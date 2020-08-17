@@ -1,4 +1,4 @@
-streamlit
+streamlit==0.62
 plotly==4.6
 seaborn==0.10
 natsort==7.0
