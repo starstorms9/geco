@@ -362,7 +362,9 @@ def plotData() :
     header.title('Plotting Gene Data')
     setWideModeHack()
     checkDeleteTempVects()
-    checkMakeDataDir()
+
+    if not os.path.exists(datadir) :
+        st.write('No files found. Generate files in the Generate reduced data mode.')
 
     csv_files = [os.path.join(datadir, fp).replace('\\','/') for fp in os.listdir(os.path.join(os.getcwd(), datadir)) if fp.startswith('dfreduce_') and fp.endswith('.csv')]
     if len(csv_files) == 0 :
