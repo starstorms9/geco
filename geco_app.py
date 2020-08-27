@@ -17,7 +17,7 @@ from scipy.stats import pearsonr
 import natsort as ns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-import umap
+# import umap
 from pathlib import Path
 import subprocess
 
@@ -60,8 +60,6 @@ def getSessionID():
             
     if this_session is None: raise RuntimeError("Oh noes. Couldn't get your Streamlit Session object")
     return id(this_session)
-
-datadir = Path(str(getSessionID()) + '_data')
 
 def getTableDownloadLink(df):
     """Generates a link allowing the data in a given panda dataframe to be downloaded
@@ -712,10 +710,17 @@ def genData() :
 #%% Main program execution
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.image('GECO_logo.jpg', use_column_width=True)
+
+sessionID = str(getSessionID())
+overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
+sessionID = overrideSessID if not overrideSessID is '' else sessionID
+datadir = Path(sessionID + '_data')
+
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 # deleteOldSessionData()
 
-st.write(os.listdir())
+st.write(datadir in os.listdir())
+st.write(datadir)
