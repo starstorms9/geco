@@ -365,6 +365,7 @@ def plotData() :
 
     if not os.path.exists(datadir) :
         st.write('No files found. Generate files in the Generate reduced data mode.')
+        return
 
     csv_files = [os.path.join(datadir, fp).replace('\\','/') for fp in os.listdir(os.path.join(os.getcwd(), datadir)) if fp.startswith('dfreduce_') and fp.endswith('.csv')]
     if len(csv_files) == 0 :
@@ -722,7 +723,7 @@ st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
-# deleteOldSessionData()
+deleteOldSessionData()
 
 st.write(os.listdir())
 st.write(str(datadir) in os.listdir())
