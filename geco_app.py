@@ -723,5 +723,5 @@ tabMethods[modeOptions.index(mode)]()
 # deleteOldSessionData()
 
 st.write(os.listdir())
-st.write(datadir in os.listdir())
+st.write(str(datadir) in os.listdir())
 st.write(datadir)
