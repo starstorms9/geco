@@ -716,7 +716,7 @@ st.sidebar.image('GECO_logo.jpg', use_column_width=True)
 
 sessionID = str(getSessionID())
 overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
-sessionID = overrideSessID if (not overrideSessID is '' and str(sessionID + '_data') in os.listdir()) else sessionID
+sessionID = overrideSessID if (not overrideSessID is '') else sessionID
 datadir = Path(sessionID + '_data')
 
 st.sidebar.header('Select Mode:')
@@ -726,6 +726,6 @@ tabMethods[modeOptions.index(mode)]()
 deleteOldSessionData()
 
 # Debug output
-st.write(os.listdir())
-st.write(str(datadir) in os.listdir())
-st.write(datadir)
+# st.write(os.listdir())
+# st.write(str(datadir) in os.listdir())
+# st.write(datadir)
