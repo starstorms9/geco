@@ -716,4 +716,4 @@ st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
-deleteOldSessionData()
+# deleteOldSessionData()
