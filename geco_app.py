@@ -627,7 +627,7 @@ def genData() :
     else :
         n_neighbors = st.sidebar.number_input('UMAP Number of neighbors', value=15, min_value=2, max_value=10000, step=10)
         min_dist = st.sidebar.number_input('UMAP Minimum distance', value=0.1, min_value=0.0, max_value=1.0, step=0.1)
-        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','haversine','mahalanobis','wminkowski','cosine','correlation']
+        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','mahalanobis','cosine','correlation']
         umap_metric = st.sidebar.selectbox('UMAP Distance Metric:', umap_metrics)
         
     if st.sidebar.button('Run {} reduction'.format(ralgo)) :
@@ -714,15 +714,22 @@ def genData() :
         dfsave.to_csv( str(datadir / 'dfreduce_') + file_name + '.csv', index=False)
         st.success('File \'{}\' saved!'.format(file_name))
 
+def sessionIDUI() :
+    sessionID = str(getSessionID())
+    overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
+    
+    sessFound = (len(overrideSessID) > 6) and (str(Path(overrideSessID + '_data')) in os.listdir())
+    if not sessFound and len(overrideSessID) > 0 :
+        st.sidebar.text('Session ID not found')
+    else :
+        sessionID = overrideSessID
+    datadir = Path(sessionID + '_data')
+    return datadir, sessionID, 'debug' in overrideSessID
+
 #%% Main program execution
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.image('GECO_logo.jpg', use_column_width=True)
-
-sessionID = str(getSessionID())
-overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
-sessionID = overrideSessID if (not overrideSessID is '') else sessionID
-datadir = Path(sessionID + '_data')
-
+datadir, sessionID, debug = sessionIDUI()
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
@@ -730,6 +737,6 @@ tabMethods[modeOptions.index(mode)]()
 deleteOldSessionData()
 
 # Debug output
-# st.write(os.listdir())
-# st.write(str(datadir) in os.listdir())
-# st.write(datadir)
+if debug :
+    st.write(os.listdir())
+    st.write("Current data directory: ", datadir)
