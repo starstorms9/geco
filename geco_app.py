@@ -17,7 +17,7 @@ from scipy.stats import pearsonr
 import natsort as ns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-# import umap
+import umap
 from pathlib import Path
 import subprocess
 
@@ -50,7 +50,6 @@ def getSessionID():
 
     # st.write(current_server.__dict__)
     # st.write(session_infos)
-
 
     for session_info in session_infos:
         # st.write(session_info.__dict__)
@@ -335,8 +334,8 @@ def plotExpressionInfo(gids_found, sample_names, all_types, avg_cols) :
 def selectGenes(dfgene) :
     get_all = st.sidebar.button('Get all genes')
     limits = ['Reduced X min', 'Reduced X max', 'Reduced Y min', 'Reduced Y max']
-    lims_sel = [st.sidebar.number_input(lim, value=0) for lim in limits]
-    lims_all = [-9999, 9999, -9999, 9999]
+    lims_sel = [st.sidebar.number_input(lim, value=0.0) for lim in limits]
+    lims_all = [-9999.0, 9999.0, -9999.0, 9999.0]
     lims = lims_all if get_all else lims_sel
 
     selected_genes = dfgene[(dfgene.red_x > lims[0]) & (dfgene.red_x < lims[1]) &
@@ -440,6 +439,12 @@ def readMe() :
         
         Although developed for bulk RNA-seq data, it will analyze any .csv data matrix with sample names (columns) and type (rows) [type = genes, protein, any other unique ID]. The output is an interactive and customizable t-SNE/UMAP. This visualization is intended to supplement more traditional statistical differential analysis pipelines (for example DESeq2 for bulk RNA-seq) and confirm or also reveal new patterns. 
         
+            """, unsafe_allow_html=True )    
+    
+    st.header('GECO Demo in 3 minutes:')
+    st.video('https://www.youtube.com/watch?v=wo8OW7eiJ5k')
+    
+    st.markdown("""    
         ### File Upload
         *** (required) Data Matrix. ***
         * Must be supplied as a .csv file.
@@ -544,9 +549,8 @@ def readMe() :
         [1]: <https://distill.pub/2016/misread-tsne/>
         [2]: <https://umap-learn.readthedocs.io/en/latest/parameters.html>
         [3]: <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>
-        
-            """, unsafe_allow_html=True )
-    
+
+            """, unsafe_allow_html=True )    
 
 def checkMakeDataDir() :
     if os.path.exists(datadir) :
@@ -605,13 +609,13 @@ def genData() :
     
     if len(avg_cols) > 2 :
         norm_per_row = st.sidebar.checkbox('Normalize per gene (row)?', value=True) 
-        norm_control = st.sidebar.checkbox('Normalize to control?', value=False)
+        norm_control = st.sidebar.checkbox('Normalize to type?', value=False)
     else :
         norm_per_row, norm_control = False, False
         st.sidebar.text('Cannot normalize per row or control with only 2 types')    
     
     if norm_control :
-        control = st.sidebar.selectbox('Select control:', all_types)
+        control = st.sidebar.selectbox('Select type for normalization:', all_types)
 
     if not useUmap :
         pca_comp = st.sidebar.number_input('PCA components (0 to run only TSNE)', value=0, min_value=0, max_value=len(all_types)-1, step=1)
@@ -623,7 +627,7 @@ def genData() :
     else :
         n_neighbors = st.sidebar.number_input('UMAP Number of neighbors', value=15, min_value=2, max_value=10000, step=10)
         min_dist = st.sidebar.number_input('UMAP Minimum distance', value=0.1, min_value=0.0, max_value=1.0, step=0.1)
-        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','haversine','mahalanobis','wminkowski','seuclidean','cosine','correlation']
+        umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','haversine','mahalanobis','wminkowski','cosine','correlation']
         umap_metric = st.sidebar.selectbox('UMAP Distance Metric:', umap_metrics)
         
     if st.sidebar.button('Run {} reduction'.format(ralgo)) :
