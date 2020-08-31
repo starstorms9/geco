@@ -690,7 +690,6 @@ def genData() :
     status.header('Data plot quick view:')
     st.pyplot()
     st.write('Total number of points: ', len(dfreduce))
-
     st.sidebar.header('Reduced Data Save')
 
     if not useUmap :
@@ -714,7 +713,21 @@ def genData() :
         dfsave.to_csv( str(datadir / 'dfreduce_') + file_name + '.csv', index=False)
         st.success('File \'{}\' saved!'.format(file_name))
 
-def sessionIDUI() :
+def sessionIDSetup() :
+    '''
+    This function sets up the session ID logistics and handles 
+
+    Returns
+    -------
+    datadir : TYPE
+        The directory where the data for this session should be stored
+    sessionID : TYPE
+        The current ID of the streamlit session which can manually specified if 
+        correct or randomly assigned.
+    debug
+        True if you want to output debug info about the directory        
+
+    '''
     sessionID = str(getSessionID())
     overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
     
@@ -729,7 +742,8 @@ def sessionIDUI() :
 #%% Main program execution
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.image('GECO_logo.jpg', use_column_width=True)
-datadir, sessionID, debug = sessionIDUI()
+datadir, sessionID, debug = sessionIDSetup()
+
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
