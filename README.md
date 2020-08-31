@@ -6,6 +6,8 @@ If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu]
 
 [GECO Video demonstration in 3 minutes][GecoVid]
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/wo8OW7eiJ5k" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ### File Upload 
 **_(required)_ The Data Matrix:**
 
