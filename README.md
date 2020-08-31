@@ -2,7 +2,7 @@
 
 Welcome to GECO (Gene Expression Clustering Optimization), the straightforward, user friendly [Streamlit app][Streamlit] to visualize and investigate data patterns with non-linear reduced dimensionality plots. Although developed for bulk RNA-seq data, GECO can be used to analyze any .csv data matrix with sample names (columns) and type (rows) [type = genes, protein, any other unique ID]. The output is an interactable and customizable T-SNE/UMAP analysis and visualization tool. The visualization is intended to supplement more traditional statistical differential analysis pipelines (for example DESeq2 for bulk RNA-seq) and to confirm and/or reveal new patterns.
 
-If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu](mailto:Habowski@uci.edu).
+If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu](mailto:Habowski@uci.edu) or post an issue on the github issues page [here](https://github.com/starstorms9/geco/issues).
 
 [GECO Video demonstration in 3 minutes][GecoVid]
 
@@ -97,7 +97,7 @@ At the top of the sidebar is information on the current session ID and a box to 
    - Thermal
 
 # GECO – INSTALLATION (For running locally) 
-_Note that the cloud-hosted website (no code, downloading, or installation needed) is available at_ _theGECOapp.com_
+_Note that the cloud-hosted website (no code, downloading, or installation needed) is available at_ [theGECOapp.com](theGECOapp.com)
 
 1. Install Anaconda from instructions [here](https://docs.anaconda.com/anaconda/install/). Direct download links at the bottom of the page can be found [here](https://www.anaconda.com/products/individual).
    - If requested, add Anaconda to PATH variable
