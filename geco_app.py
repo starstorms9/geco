@@ -1,4 +1,7 @@
-#%% Imports
+###############
+### Imports ###
+###############
+
 import streamlit as st
 header = st.title("Starting up...")
 import numpy as np
@@ -24,7 +27,7 @@ import subprocess
 import streamlit.ReportThread as ReportThread
 from streamlit.server.Server import Server
 
-#%% Check for GPU and try to import TSNECuda
+# Check for GPU and try to import TSNECuda if possible. Otherwise just use sklearn
 gpu_avail = False
 try :
     from tsnecuda import TSNE as TSNECuda
@@ -32,27 +35,50 @@ try :
 except :
     print('TSNE Cuda could not be imported, not using GPU.')
 
-#%% Helper Methods
+######################
+### Helper Methods ###
+######################
+
 nat_sort = lambda l : ns.natsorted(l)
 # nat_sort = lambda l : sorted(l,key=lambda x:int(re.sub("\D","",x) or 0))
 removeinvalidchars = lambda s : re.sub('[^a-zA-Z0-9\n\._ ]', '', s).strip()
 
 def setWideModeHack():
+    '''
+    Streamlit hack to set wide mode programmatically so that it doesn't have to
+    be selected every time.
+
+    Returns
+    -------
+    None.
+
+    '''
     max_width_str = f"max-width: 1200px;"
     st.markdown( f""" <style> .reportview-container .main .block-container{{ {max_width_str} }} </style> """, unsafe_allow_html=True)
 
 def getSessionID():
-    # Hack to get the session object from Streamlit.
+    '''
+    Streamlit hack to use report server debugging to get unique session IDs.
+    These session IDs are used in order to separate data from different users
+    and allows for easy sharing of plots using session IDs.
+
+    Raises
+    ------
+    RuntimeError
+        If the streamlit session object is not available.
+
+    Returns
+    -------
+    sessionID
+        The ID of the current streamlit user session.
+
+    '''
     ctx = ReportThread.get_report_ctx()
     this_session = None    
     current_server = Server.get_current()
     session_infos = Server.get_current()._session_info_by_id.values()
 
-    # st.write(current_server.__dict__)
-    # st.write(session_infos)
-
     for session_info in session_infos:
-        # st.write(session_info.__dict__)
         s = session_info.session
         if (not hasattr(s, '_main_dg') and s.enqueue == ctx.enqueue) :
             this_session = s
@@ -61,10 +87,21 @@ def getSessionID():
     return id(this_session)
 
 def getTableDownloadLink(df):
-    """Generates a link allowing the data in a given panda dataframe to be downloaded
-    in:  dataframe
-    out: href string
-    """
+    '''
+    Streamlit hack to generate a link allowing the data in a given panda dataframe to be downloaded.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        The dataframe to be converted to download link.
+
+    Returns
+    -------
+    href : string
+        HTML string to insert into the output which will be shown as a URL link
+        that will download the dataframe.
+
+    '''
     csv_file = df.to_csv(index=False)
     b64 = base64.b64encode(csv_file.encode()).decode()  # some strings <-> bytes conversions necessary here
     href = f'<a href="data:file/csv;base64,{b64}">Download full data link (add .csv extension after download) </a>'
@@ -72,6 +109,26 @@ def getTableDownloadLink(df):
 
 @st.cache(allow_output_mutation=True)
 def getDataPlot(file_name) :
+    '''
+    Load data to plot. The output of this function is cached by streamlit
+    in order to speed up subsequent calls.
+
+    Parameters
+    ----------
+    file_name : string
+        The file name of the data to plot.
+
+    Returns
+    -------
+    dfgene : pandas DataFrame
+        The full gene dataframe.
+    all_types : list of strings
+        All sample types that were found.
+    sample_names : list of strings
+        All valid sample names including sample numbers.
+    avg_cols : list of strings
+        The columns to average over.
+    '''
     dfgene = pd.read_csv(file_name)
     index = 0
     for i, col in enumerate(dfgene.columns) :
@@ -87,6 +144,17 @@ def getDataPlot(file_name) :
     return dfgene, all_types, sample_names, avg_cols
 
 def getDataRaw() :
+    '''
+    Passthrough function to ensure that a dataframe is read and if not then
+    None is returned instead.
+
+    Returns
+    -------
+    dfgene : pandas DataFrame
+        The read dataframe or None if no dataframe was found.
+    glen : 
+        The length of the dataframe. 0 if no dataframe was found.
+    '''
     dfgene, glen = getFile(title='Gene expression data')
 
     if glen == 0 : return None, 0
@@ -94,6 +162,33 @@ def getDataRaw() :
 
 @st.cache
 def processRawData(dfgene) :
+    '''
+    Function to clean and organize and automatically label data for 
+    subsequent post processing.
+    The output of this function is cached by Streamlit to speed up subsequent calls.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        The dataframe to process.
+
+    Returns
+    -------
+    dfgene : pandas DataFrame
+        The processed dataframe.
+    all_types : list of strings
+        All sample types that were found.
+    sample_names : list of strings
+        All valid sample names including sample numbers.
+    typecols : list of lists of strings
+        All of the entries from sample_names but arranged such that the rows
+        align with the all_types and the columns are each sample repeat.
+    avg_cols : list of strings
+        The columns to average over.
+    warning_messages : string
+        Warning messages that were generated while cleaning the data.
+
+    '''
     warning_messages = []
     all_types, sample_names = set(), []
     pat_ends_in_number_with_underscore = re.compile(r'_\d+$')
@@ -153,8 +248,21 @@ def processRawData(dfgene) :
     checkDeleteTempVects()
     return dfgene, all_types, sample_names, typecols, avg_cols, warning_messages
 
-# This methods ensures every column header ends in a '_X' where X is the sample number
 def dedupe(cols) :
+    '''
+    This methods ensures every column header ends in a '_X' where X is the sample number
+
+    Parameters
+    ----------
+    cols : list of strings
+        The columns to check for duplicates.
+
+    Returns
+    -------
+    new_cols : list of strings
+        The processed columns.
+
+    '''
     pat_ends_in_number_with_underscore = re.compile(r'_\d+$')
     cols = [removeinvalidchars(col) for col in cols]
     new_cols = []
@@ -168,6 +276,26 @@ def dedupe(cols) :
     return new_cols
 
 def getFile(title, sidebar=False, dedupe_headers=True) :
+    '''
+    File uploader UI to get the a .csv file through the streamlit interface.
+
+    Parameters
+    ----------
+    title : string
+        The name of the file to be uploaded.
+    sidebar : bool, optional
+        Whether to show in the sidebar or the main area. The default is False.
+    dedupe_headers : TYPE, optional
+        Whether to deduplicate the headers. The default is True.
+
+    Returns
+    -------
+    df : pandas DataFrame
+        The uploaded dataframe.
+    length : int
+        The length of the uploaded dataframe. 0 if no data is uploaded.
+
+    '''
     file = st.file_uploader(title, type="csv") if not sidebar else st.sidebar.file_uploader(title, type="csv")
     df = None
     length = 0
@@ -185,6 +313,23 @@ def getFile(title, sidebar=False, dedupe_headers=True) :
     return df, length
 
 def askColor(all_types) :
+    '''
+    Streamlit UI for choosing how to colorize the main plot.
+
+    Parameters
+    ----------
+    all_types : list of strings
+        The possible types to color by.
+
+    Returns
+    -------
+    chosen_color : string
+        The chosen coloration option.
+    norm_control
+        Whether to normalize to control. Either avg_<chosen_control> or None to
+        signify to not use this option.
+
+    '''
     extra_color_indices = ['Assigned type', 'Average expression of assigned type', 'Enrichment in type (select)']
     color_indices = ['Expression of {}'.format(typ) for typ in all_types] + extra_color_indices
     color_nums = ['avg_'+typ for typ in all_types] + ['type', 'avg_type', 'norm_control']
@@ -195,6 +340,24 @@ def askColor(all_types) :
     return chosen_color, None
 
 def askMarkers(dfgene, dfmarkers) :
+    '''
+    Streamlit UI for processing a curated list of gene markers to show on the plot.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        Full dataframe containing all of the genes being analyzed.
+    dfmarkers : pandas DataFrame
+        Dataframe that was uploaded by the user containing the curated marker
+        gene list to visualize.
+
+    Returns
+    -------
+    markers_found
+        Return any gene markers that were found. Returns empty list if no
+        valid marker genes are found.
+
+    '''
     markers_selected = st.sidebar.selectbox('Select curated marker genes', ['none'] + list(dfmarkers.columns))
     markers = []
     if not markers_selected == 'none' :
@@ -204,12 +367,43 @@ def askMarkers(dfgene, dfmarkers) :
     return []
 
 def askGids(dfgene) :
+    '''
+    Streamlit UI for getting gene IDs (gids) from the user so that they can be
+    visualized on the plot. Processes the gene IDs to go from a separated string
+    to a list of valid gene entries in the full gene list.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        Full gene dataframe to check with to ensure the marker genes are valid.
+
+    Returns
+    -------
+    gids_found : list of strings
+        List of valid markers genes that were found.
+
+    '''
     gids_input = st.sidebar.text_area("Gene IDs (comma or space separated):")
     gids_inspect = [gid.strip().replace("'", "") for gid in re.split(r'[;,\s]\s*', gids_input) if len(gid) > 1]
     gids_found = dfgene[dfgene.geneid.isin(gids_inspect)]
     return gids_found
 
 def askColorScale(chosen_color) :
+    '''
+    Streamlit UI for getting the color scale. Depending on the data and 
+    type of colorization chosen there are various color scale options.
+
+    Parameters
+    ----------
+    chosen_color : string
+        The colorization option chosen.
+
+    Returns
+    -------
+    color_scale : string
+        The plotly string defining the plotly internal color scale.
+
+    '''
     type_color = chosen_color == 'type'
     seq_color_scale = st.sidebar.checkbox('Use continuous color scale?', value=False) if type_color else True
     reverse_color_scale = st.sidebar.checkbox('Reverse color scale?', value=type_color)
@@ -226,12 +420,61 @@ def askColorScale(chosen_color) :
     return color_scale
 
 def calcPlotLimits(dfgene, padding = 1.05) :
+    '''
+    Given the full gene list this utility methods outputs padded ranges for the plot.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        Full gene list from which to generate the bounding window limits.
+    padding : float, optional
+        The amount of padding to add. The default is 1.05 (5 % extra around the edges).
+
+    Returns
+    -------
+    xlims : list of floats
+        The x axis minimum and maximum.
+    ylims : list of floats
+        The y axis minimum and maximum.
+
+    '''
     xmin, xmax = dfgene.red_x.min(), dfgene.red_x.max()
     ymin, ymax = dfgene.red_y.min(), dfgene.red_y.max()
     xlims, ylims = [xmin*padding, xmax*padding], [ymin*padding, ymax*padding]
     return xlims, ylims
 
 def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, markers_found, xlims, ylims, log_color_scale) :
+    '''
+    Main visualization method for showing the reduced data. After all necessary
+    options have been defined this function generates and plots the data as a
+    2D plotly chart.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        The full gene list to plot.
+    all_types : list of strings
+        All types of samples.
+    color_scale : string
+        The chosen color scale to use.
+    chosen_color : string
+        How to colorize the points.
+    gids_found : list of strings
+        Any valid gene markers specified by the user.
+    markers_found : list of strings
+        Any valid gene markers uploaded.
+    xlims : list of floats
+        The x axis limits.
+    ylims : list of floats
+        The y axis limits.
+    log_color_scale : bool
+        Whether to plot on a log scale or not.
+
+    Returns
+    -------
+    None.
+
+    '''
     if len(dfgene) == 0 :
         st.error('No points left after filters.')
         return
@@ -286,6 +529,26 @@ def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, marker
     st.plotly_chart(fig, use_container_width=False)
 
 def plotExpressionInfo(gids_found, sample_names, all_types, avg_cols) :
+    '''
+    Secondary plotting function to show the full expression info for a specific
+    entry in the gene list.
+
+    Parameters
+    ----------
+    gids_found : list of strings
+        The gene IDs specified as options to plot.
+    sample_names : list of strings
+        The names of every sample uploaded including repetition number.
+    all_types : list of strings
+        All types of samples.
+    avg_cols : list of strings
+        List of columns to average over.
+
+    Returns
+    -------
+    None.
+
+    '''
     dfsub = gids_found.loc[:, list(sample_names)]
     dfsub.index = gids_found.geneid
     dfsub = dfsub.T
@@ -332,6 +595,22 @@ def plotExpressionInfo(gids_found, sample_names, all_types, avg_cols) :
         st.pyplot()
 
 def selectGenes(dfgene) :
+    '''
+    Utility method for getting genes from the reduced plot using window
+    coordinates. Unfortunately getting the data directly from the Plotly
+    plot was not feasible despite many attempts as it's a fundamental streamlit
+    limitation.
+
+    Parameters
+    ----------
+    dfgene : pandas DataFrame
+        The full list of genes.
+
+    Returns
+    -------
+    None.
+
+    '''
     get_all = st.sidebar.button('Get all genes')
     limits = ['Reduced X min', 'Reduced X max', 'Reduced Y min', 'Reduced Y max']
     lims_sel = [st.sidebar.number_input(lim, value=0.0) for lim in limits]
@@ -347,17 +626,45 @@ def selectGenes(dfgene) :
         st.text(',\n'.join(selected_genes.geneid.values))
         
 def checkDeleteTempVects() :
+    '''
+    Delete vectors that were temporarily generated to quickly view.
+
+    Returns
+    -------
+    None.
+
+    '''
     try : os.remove(datadir / 'temp_dfreduce.csv')
     except : pass
 
 def deleteOldSessionData() :
-    command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +5 -exec rm {} \\;'
+    '''
+    Server utility function that runs command line functions on the server side
+    to remove old and unused datasets after a while.
+
+    Returns
+    -------
+    None.
+
+    '''
+    command_delOldData = 'find *_data* -maxdepth 3 -name \'*dfreduce*.csv\' -type f -mtime +15 -exec rm {} \\;'
     command_rmEmptyDir = 'find *_data* -empty -type d -delete'
     subprocess.Popen(command_delOldData, shell=True)
     subprocess.Popen(command_rmEmptyDir, shell=True)
 
-#%% Main Methods
+####################
+### Main Methods ###
+####################
+
 def plotData() :
+    '''
+    Main method for visualizing the reduced data that was previously generated.
+
+    Returns
+    -------
+    None.
+
+    '''
     header.title('Plotting Gene Data')
     setWideModeHack()
     checkDeleteTempVects()
@@ -433,6 +740,15 @@ def plotData() :
     selectGenes(dfplot)
 
 def readMe() :
+    '''
+    This simply shows the readme for geco from github as well as a quick
+    intro video showing basic usage.
+
+    Returns
+    -------
+    None.
+
+    '''
     header.title('GECO - README')
     st.markdown("""           
         Welcome to GECO (Gene Expression Clustering Optimization), the straightforward, user friendly [Streamlit] app to visualize and investigate data patterns with non-linear reduced dimensionality plots.
@@ -547,23 +863,83 @@ def readMe() :
         
         [Streamlit]: <https://www.streamlit.io/>
         [1]: <https://distill.pub/2016/misread-tsne/>
-        [2]: <https://umap-learn.readthedocs.io/en/latest/parameters.html>
+        [2]: <https://pair-code.github.io/understanding-umap/>
         [3]: <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>
 
             """, unsafe_allow_html=True )    
 
 def checkMakeDataDir() :
+    '''
+    Utility function to check whether the data directory exists and if not
+    then make it.
+
+    Returns
+    -------
+    None.
+
+    '''
     if os.path.exists(datadir) :
         return
     os.mkdir(datadir)
 
 def umapReduce(npall, n_neighbors=15, min_dist=0.1, metric='euclidean') :
+    '''
+    Use UMAP to reduce the data according to the input parameters.
+
+    Parameters
+    ----------
+    npall : numpy array
+        Numpy array of the input vectors that have been uploaded.
+    n_neighbors : int, optional
+        Number of nearest neighbors to consider when calculating distance metrics.
+        The default is 15.
+    min_dist : float, optional
+        The minimum distance between points allowed in the output.
+        The default is 0.1.
+    metric : string, optional
+        The distance metric to use. The default is 'euclidean'.
+
+    Returns
+    -------
+    vects : numpy array
+        The reduced vectors in the same order and rows as the input but with a
+        dimension of only 2
+    '''
     print('Running UMAP...')
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric)
     vects = reducer.fit_transform(npall)
     return vects
 
 def tsneReduce(npall, pca_components=0, perp=40, learning_rate=200, n_iter=1000, early_exaggeration=12) :
+    '''
+    Use TSNE to reduce the input data. Takes in arguments and passes them 
+    directly to the TSNE algorithm.
+
+    Parameters
+    ----------
+    npall : numpy array
+        Numpy array of the input vectors that have been uploaded
+    pca_components : int, optional
+        If greater than 0 PCA is used before TSNE in order to reduce the runtime.
+        The default is 0 (aka not using PCA)
+    perp : float, optional
+        Perplexity parameter for TSNE (basically how many nearest neighbors are 
+        considered for computing distances). The default is 40.
+    learning_rate : float, optional
+        Learning rate per iteration. The default is 200.
+    n_iter : int, optional
+        Max number of iterations allowed. The default is 1000.
+    early_exaggeration : float, optional
+        Amount of early exaggeration to use in the TSNE algorithm. This
+        increases the error in the first several iterations to facailitate
+        convergence. The default is 12.
+
+    Returns
+    -------
+    out_vects numpy array
+        The reduced vectors in the same order and rows as the input but with a
+        dimension of only 2
+    '''
     if pca_components > 0 :
         pca = PCA(n_components=pca_components)
         princcomps = pca.fit_transform(npall)
@@ -582,6 +958,16 @@ def tsneReduce(npall, pca_components=0, perp=40, learning_rate=200, n_iter=1000,
     return out_vects
 
 def genData() :
+    '''
+    This main function is the tab for generating the reduced data.
+    It controls the flow of the user uploading the data, reducing the data,
+    plotting it quickly to check, and saving the data to be fully plotted.
+
+    Returns
+    -------
+    None.
+
+    '''
     header.title('Generate reduced dimensionality data')
     dfgene, glen = getDataRaw()
     if glen == 0 : return
@@ -603,7 +989,7 @@ def genData() :
     ralgo = st.sidebar.selectbox('Reduction algorightm:', ['UMAP', 'TSNE'])
     useUmap = ralgo == 'UMAP'
 
-    param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://umap-learn.readthedocs.io/en/latest/parameters.html']
+    param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://pair-code.github.io/understanding-umap/']
     st.sidebar.markdown('<a href="{}">Guide on setting {} parameters</a>'.format(param_guide_links[useUmap], ralgo), unsafe_allow_html=True)
     remove_zeros = st.sidebar.checkbox('Remove entries with all zeros?', value=True)
     
@@ -715,7 +1101,7 @@ def genData() :
 
 def sessionIDSetup() :
     '''
-    This function sets up the session ID logistics and handles 
+    This function sets up the session ID logistics and handles manual ID setting.
 
     Returns
     -------
@@ -725,8 +1111,7 @@ def sessionIDSetup() :
         The current ID of the streamlit session which can manually specified if 
         correct or randomly assigned.
     debug
-        True if you want to output debug info about the directory        
-
+        True if you want to output debug info about the directory
     '''
     sessionID = str(getSessionID())
     overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
@@ -739,7 +1124,11 @@ def sessionIDSetup() :
     datadir = Path(sessionID + '_data')
     return datadir, sessionID, 'debug' in overrideSessID
 
-#%% Main program execution
+
+##############################
+### Main Program Execution ###
+##############################
+
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.image('GECO_logo.jpg', use_column_width=True)
 datadir, sessionID, debug = sessionIDSetup()
