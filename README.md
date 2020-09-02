@@ -1,10 +1,12 @@
 ![GECO Logo](https://raw.githubusercontent.com/starstorms9/geco/master/GECO_logo.jpg)
 
-# GECO – README            www.theGECOapp.com
+# GECO – README            
 
 Welcome to GECO (Gene Expression Clustering Optimization), the straightforward, user friendly [Streamlit app][Streamlit] to visualize and investigate data patterns with non-linear reduced dimensionality plots. Although developed for bulk RNA-seq data, GECO can be used to analyze any .csv data matrix with sample names (columns) and type (rows) [type = genes, protein, any other unique ID].
 
 The output is an interactable and customizable T-SNE/UMAP analysis and visualization tool. The visualization is intended to supplement more traditional statistical differential analysis pipelines (for example DESeq2 for bulk RNA-seq) and to confirm and/or reveal new patterns.
+
+www.theGECOapp.com
 
 If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu](mailto:Habowski@uci.edu) or post an issue on the github issues page [here](https://github.com/starstorms9/geco/issues).
 
