@@ -10,6 +10,13 @@ If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu]
 
 [GECO Video demonstration in 3 minutes][GecoVid]
 
+### Quick Guide to Getting Started
+1. Upload data file and verify that GECO has interpreted the sample names/bio-replicates.
+2. Select the reduction parameters to be used for the analysis.
+3. Click the 'Run UMAP/t-SNE reduction' button at the bottom of the parameters sidebar.
+4. Once a plot is generated, save it by clicking ‘Save data file’ at the bottom of the sidebar.
+5. Proceed to the ‘Plot reduced data’ mode to visualize the saved plot.
+
 ### File Upload 
 **_(required)_ The Data Matrix:**
 
