@@ -160,10 +160,34 @@ def getDataRaw() :
     if glen == 0 : return None, 0
     return dfgene, glen
 
+def hash_df(df) :
+    '''
+    Custom hash function for data processing to ensure streamlit hashes the
+    entire dataframe correctly. At a user level, this ensures that any changes
+    to the uploaded data file are properly reflected downstream.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The dataframe to hash.
+
+    Returns
+    -------
+    hashed : int
+        The hash of the entire dataframe.
+
+    '''
+    hashed = pd.util.hash_pandas_object(df).sum() + sum([hash(col) for col in df.columns])
+    return hashed
+
+@st.cache(allow_output_mutation=True, hash_funcs={pd.DataFrame : hash_df})
 def processRawData(dfgene) :
     '''
     Function to clean and organize and automatically label data for 
     subsequent post processing.
+    The output of this function is hashed with the custom hash function to ensure
+    that streamlit properly accounts for all of the data in the dataframe as
+    well as the column headers.
 
     Parameters
     ----------
@@ -186,7 +210,7 @@ def processRawData(dfgene) :
     warning_messages : string
         Warning messages that were generated while cleaning the data.
 
-    '''
+    '''    
     warning_messages = []
     all_types, sample_names = set(), []
     pat_ends_in_number_with_underscore = re.compile(r'_\d+$')
@@ -243,7 +267,7 @@ def processRawData(dfgene) :
     dfgene['avg_type'] = dfgene.apply(lambda row : row['avg_' + row.type], axis=1)
 
     avg_cols = nat_sort(avg_cols)
-    checkDeleteTempVects()
+    checkDeleteTempVects()    
     return dfgene, all_types, sample_names, typecols, avg_cols, warning_messages
 
 def dedupe(cols) :
@@ -988,7 +1012,7 @@ def genData() :
     st.dataframe(dfprint)
 
     st.sidebar.header('Reduction Run Parameters')
-    ralgo = st.sidebar.selectbox('Reduction algorightm:', ['UMAP', 'TSNE'])
+    ralgo = st.sidebar.selectbox('Reduction algorithm:', ['UMAP', 'TSNE'])
     useUmap = ralgo == 'UMAP'
 
     param_guide_links = ['https://distill.pub/2016/misread-tsne/', 'https://pair-code.github.io/understanding-umap/']
@@ -1099,7 +1123,7 @@ def genData() :
         dfsave = dfsave.round(decimals=3)
         checkMakeDataDir()
         dfsave.to_csv( str(datadir / 'dfreduce_') + file_name + '.csv', index=False)
-        st.success('File \'{}\' saved!'.format(file_name))
+        st.sidebar.success('File \'{}\' saved!'.format(file_name))
 
 def sessionIDSetup() :
     '''
@@ -1119,13 +1143,18 @@ def sessionIDSetup() :
     overrideSessID = st.sidebar.text_input('Session ID override, current is: ' + sessionID, value='')
     
     sessFound = (len(overrideSessID) > 6) and (str(Path(overrideSessID + '_data')) in os.listdir())
-    if not sessFound and len(overrideSessID) > 0 :
-        st.sidebar.text('Session ID not found')
-    else :
+    if sessFound :
         sessionID = overrideSessID
+    else :
+        if len(overrideSessID) > 0 : st.sidebar.text('Session ID not found')
+             
     datadir = Path(sessionID + '_data')
-    return datadir, sessionID, 'debug' in overrideSessID
-
+    
+    # Debug output
+    if 'debug' in overrideSessID :
+        st.write(os.listdir(), f"\nCurrent data directory: {datadir}")
+    
+    return datadir, sessionID
 
 ##############################
 ### Main Program Execution ###
@@ -1133,15 +1162,10 @@ def sessionIDSetup() :
 
 modeOptions = ['Read Me', 'Generate reduced data', 'Plot reduced data']
 st.sidebar.image('GECO_logo.jpg', use_column_width=True)
-datadir, sessionID, debug = sessionIDSetup()
+datadir, sessionID = sessionIDSetup()
 
 st.sidebar.header('Select Mode:')
 mode = st.sidebar.radio("", modeOptions, index=0)
 tabMethods = [readMe, genData, plotData]
 tabMethods[modeOptions.index(mode)]()
 deleteOldSessionData()
-
-# Debug output
-if debug :
-    st.write(os.listdir())
-    st.write("Current data directory: ", datadir)
