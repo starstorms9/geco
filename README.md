@@ -111,7 +111,7 @@ At the top of the sidebar is information on the current session ID and a box to 
 
 
 # GECO – INSTALLATION (For running locally) 
-_The cloud-hosted website (no code, downloading, or installation needed) is available at_ [theGECOapp.com](theGECOapp.com)
+_The cloud-hosted website (no code, downloading, or installation needed) is available at_ [theGECOapp.com][gecoapp]
 
 **Detailed installation from scratch if you don't have python installed already:**
 1. Install Anaconda from instructions [here](https://docs.anaconda.com/anaconda/install/). Direct download links at the bottom of the page can be found [here](https://www.anaconda.com/products/individual).
@@ -154,6 +154,7 @@ _The cloud-hosted website (no code, downloading, or installation needed) is avai
 [Streamlit]: <https://www.streamlit.io/>
 [GecoVid]: <https://youtu.be/wo8OW7eiJ5k>
 [TSNECudaInstall]: <https://github.com/CannyLab/tsne-cuda/wiki/Installation>
+[gecoapp]: <http://thegecoapp.com/>
 [1]: <https://distill.pub/2016/misread-tsne/>
 [2]: <https://pair-code.github.io/understanding-umap/>
 [3]: <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>
