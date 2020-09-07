@@ -40,7 +40,6 @@ except :
 ######################
 
 nat_sort = lambda l : ns.natsorted(l)
-# nat_sort = lambda l : sorted(l,key=lambda x:int(re.sub("\D","",x) or 0))
 removeinvalidchars = lambda s : re.sub('[^a-zA-Z0-9\n\._ ]', '', s).strip()
 
 def setWideModeHack():
