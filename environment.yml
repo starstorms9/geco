@@ -1,4 +1,4 @@
-name: genestest2
+name: geco
 channels:
   - cannylab
   - conda-forge
@@ -16,12 +16,7 @@ dependencies:
   - scipy=1.4.1=py37ha3d9a3c_3
   - seaborn=0.10.0=py_0
   - umap-learn=0.4.1=py37hc8dfbb8_0
-  # - cuda101=1.0=h589bae5_0
-  # - cudatoolkit=10.1.243=h6bb024c_0
-  # - cudnn=7.6.5=cuda10.1_0
-  # - cupti=10.1.168=0
-  # - tsnecuda=2.1.0 [cuda101]
   - pip:
-    - streamlit==0.57.2
+    - streamlit==0.62
     - natsort==7.0.1
     - pynndescent==0.4.7

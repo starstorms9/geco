@@ -109,37 +109,51 @@ At the top of the sidebar is information on the current session ID and a box to 
    - Jet
    - Thermal
 
-# GECO – INSTALLATION (For running locally) 
-_Note that the cloud-hosted website (no code, downloading, or installation needed) is available at_ [theGECOapp.com](theGECOapp.com)
 
+# GECO – INSTALLATION (For running locally) 
+_The cloud-hosted website (no code, downloading, or installation needed) is available at_ [theGECOapp.com](theGECOapp.com)
+
+**Detailed installation from scratch if you don't have python installed already:**
 1. Install Anaconda from instructions [here](https://docs.anaconda.com/anaconda/install/). Direct download links at the bottom of the page can be found [here](https://www.anaconda.com/products/individual).
    - If requested, add Anaconda to PATH variable
-   - To reduce download and install size, users could install Miniconda from [here](https://docs.conda.io/en/latest/miniconda.html)
+   - To reduce download and install size, you could install Miniconda from [here](https://docs.conda.io/en/latest/miniconda.html)
 2. Download github repository locally
    - Manual download:
      - Go to the [geco github page](https://github.com/starstorms9/geco) --> green 'Code' button dropdown --> Download Zip
       - Extract geco-master to a local folder
-   - Or clone the repo locally using [git](https://git-scm.com/)
-3. Open a terminal in the geco-master folder and create the conda environment from the .yml file:
+   - Or clone the repo locally using [git](https://git-scm.com/) or other SVN manager.
+3. Open a terminal in the geco-master folder and navigate to the local folder:
    - Ubuntu / Linux:
-     1. Navigate to geco-master folder in file explorer
+     1. Navigate to the geco-master folder in file explorer
      2. Right click empty space in that folder
-     3. &quot;Open in terminal&quot;
+     3. "Open in terminal"
    - Windows:
-     1. Copy file path to the geco-master folder
-     2. Open command prompt by hitting windows key + R, type cmd, then hit enter
-     3. Move to the geco folder by typing `cd <path to geco-master folder>`
-4. To create the conda environment run the command `conda env create -f environment.yml`
-     - Linux (Ubuntu) with CUDA enabled GPU can use environment-cuda.yml
-     - The environment only needs to be created the first time you run the app
+     1. Open command prompt by hitting windows key + R, type cmd, then hit enter
+     2. Copy file path to the geco-master folder
+     3. Move to the geco folder by entering `cd <path to geco-master folder you just copied>`
+4. Create the `geco` conda environment by running the command `conda env create -f environment.yml`
+     - Linux (Ubuntu) with CUDA enabled GPU can use `environment-cuda.yml` instead to speed up TSNE run time
+     - The environment only needs to be created once the first time you run the app
 5. Start streamlit app in same terminal window (do this every time to start the app)
    - Run the command `conda activate geco`
-   - Run the command `streamlit run geco\_app.py`
-    - Streamlit will start from this command terminal and open up automatically. It can also be accessed by opening a browser window and going to [localhost:8501](localhost:8501)
-    - Do not close the command terminal window as that will close the Streamlit app.
+   - Run the command `streamlit run geco_app.py`
+     - Streamlit will start from this command terminal and open up automatically. It can also be accessed by opening a browser window and going to [localhost:8501](localhost:8501)
+     - Do not close the command terminal window as that will close the Streamlit app.
+
+**Advanced installation for users with python installed already:**
+1. Clone repo locally
+2. Open terminal and navigate to repo folder
+3. Install dependencies
+   - Using conda (recommended): `conda env create -f environment.yml` and then `conda activate geco`
+     - (Optional for Linux systems with CUDA enabled GPU) Use `environment-cuda.yml` instead or manually install TSNE Cuda as detailed [here][TSNECudaInstall]
+   - Using pip: `pip install -r requirements.txt`
+4. Run the command `streamlit run geco_app.py` to start the app
+
+**Please post any installation issues or questions on the issues page [here](https://github.com/starstorms9/geco/issues)**
 
 [Streamlit]: <https://www.streamlit.io/>
 [GecoVid]: <https://youtu.be/wo8OW7eiJ5k>
+[TSNECudaInstall]: <https://github.com/CannyLab/tsne-cuda/wiki/Installation>
 [1]: <https://distill.pub/2016/misread-tsne/>
 [2]: <https://pair-code.github.io/understanding-umap/>
 [3]: <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>
