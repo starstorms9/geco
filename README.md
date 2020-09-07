@@ -122,7 +122,7 @@ _The cloud-hosted website (no code, downloading, or installation needed) is avai
      - Go to the [geco github page](https://github.com/starstorms9/geco) --> green 'Code' button dropdown --> Download Zip
       - Extract geco-master to a local folder
    - Or clone the repo locally using [git](https://git-scm.com/) or other SVN manager.
-3. Open a terminal in the geco-master folder and navigate to the local folder:
+3. Open a terminal in the geco-master folder:
    - Ubuntu / Linux:
      1. Navigate to the geco-master folder in file explorer
      2. Right click empty space in that folder
