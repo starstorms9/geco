@@ -154,7 +154,11 @@ def getDataRaw() :
     glen : 
         The length of the dataframe. 0 if no dataframe was found.
     '''
-    dfgene, glen = getFile(title='Gene expression data')
+    st.subheader("Gene expression data upload:")
+    st.write('''*Note that GECO does not perform any checks on the input data for
+             statistical significance. If this is important for the analysis the 
+             data must be preprocessed before uploading.*''')
+    dfgene, glen = getFile(title='')
 
     if glen == 0 : return None, 0
     return dfgene, glen
@@ -1027,19 +1031,38 @@ def genData() :
     
     if norm_control :
         control = st.sidebar.selectbox('Select type for normalization:', all_types)
+        
+    hyperParamDescs = {'TSNE_PCA' : 'Specifies how many PCA components to reduce the input data to prior to running TSNE to speed up convergence. Enter 0 to disable PCA preprocessing.',
+                       'TSNE_Perp' : 'Number of nearest neighbors considered when calculating clusters. Large values focus on capturing global structure at the cost of local details.',
+                       'TSNE_LR' : 'Controls how fast TSNE creates clusters. Large values lead to faster convergence but too much can cause inaccuracies and divergence instead.',
+                       'TSNE_EE' : 'Early exaggeration of the input points. Larger values force clusters to be more distinct by initially exaggerating their relative distances.',
+                       'TSNE_MaxIt' : 'Maximum number of iterations for the TSNE algorithm. Larger values will increase accuracy but will take longer to compute.',
+                       'UMAP_NN' : 'The number of nearest neighbors to consider for each input point. Large values focus on capturing global structure at the cost of local details.',
+                       'UMAP_MinDist' : 'Minimum distance between output points. Controls how tightly points cluster together with low values leading to more tightly packed clusters.',
+                       'UMAP_DistMetric' : 'Distance metric used to determine distance between points.'}
 
     if not useUmap :
-        pca_comp = st.sidebar.number_input('PCA components (0 to run only TSNE)', value=0, min_value=0, max_value=len(all_types)-1, step=1)
-        perp = st.sidebar.number_input('TSNE Perplexity', value=50, min_value= 40 if gpu_avail else 2, max_value=10000, step=10)
-        learning_rate = st.sidebar.number_input('TSNE Learning Rate', value=200, min_value=50, max_value=10000, step=25)
-        exagg = st.sidebar.number_input('TSNE Early Exaggeration', value=12, min_value=0, max_value=10000, step=25)
-        if not gpu_avail : max_iterations = st.sidebar.number_input('TSNE Max Iterations', value=1000, min_value=500, max_value=2000, step=100)
-        else : max_iterations = 1000
+        st.sidebar.markdown('''TSNE PCA Preprocess:''')
+        pca_comp = st.sidebar.number_input(hyperParamDescs['TSNE_PCA'], value=0, min_value=0, max_value=len(all_types)-1, step=1)
+        st.sidebar.markdown('''TSNE Perplexity:''')
+        perp = st.sidebar.number_input(hyperParamDescs['TSNE_Perp'], value=50, min_value= 40 if gpu_avail else 2, max_value=10000, step=10)
+        st.sidebar.markdown('''TSNE Learning Rate:''')
+        learning_rate = st.sidebar.number_input(hyperParamDescs['TSNE_LR'], value=200, min_value=50, max_value=10000, step=25)
+        st.sidebar.markdown('''TSNE Early Exaggeration:''')
+        exagg = st.sidebar.number_input(hyperParamDescs['TSNE_EE'], value=12, min_value=0, max_value=10000, step=25)
+        if not gpu_avail : 
+            st.sidebar.markdown('''TSNE Max Iterations:''')
+            max_iterations = st.sidebar.number_input(hyperParamDescs['TSNE_MaxIt'], value=1000, min_value=500, max_value=2000, step=100)
+        else :
+            max_iterations = 1000
     else :
-        n_neighbors = st.sidebar.number_input('UMAP Number of neighbors', value=15, min_value=2, max_value=10000, step=10)
-        min_dist = st.sidebar.number_input('UMAP Minimum distance', value=0.1, min_value=0.0, max_value=1.0, step=0.1)
+        st.sidebar.markdown('''UMAP Number of Neighbors:''')
+        n_neighbors = st.sidebar.number_input(hyperParamDescs['UMAP_NN'], value=15, min_value=2, max_value=10000, step=10)
+        st.sidebar.markdown('''UMAP Minimum Distance:''')
+        min_dist = st.sidebar.number_input(hyperParamDescs['UMAP_MinDist'], value=0.1, min_value=0.0, max_value=1.0, step=0.1)
+        st.sidebar.markdown('''UMAP Distance Metric:''')
         umap_metrics = ['euclidean','manhattan','chebyshev','minkowski','canberra','braycurtis','mahalanobis','cosine','correlation']
-        umap_metric = st.sidebar.selectbox('UMAP Distance Metric:', umap_metrics)
+        umap_metric = st.sidebar.selectbox(hyperParamDescs['UMAP_DistMetric'], umap_metrics)
         
     if st.sidebar.button('Run {} reduction'.format(ralgo)) :
         status = st.header('Running {} reduction'.format(ralgo))
