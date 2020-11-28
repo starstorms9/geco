@@ -1,3 +1,5 @@
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/starstorms9/geco/master/geco_app.py)
+
 ![GECO Logo](https://raw.githubusercontent.com/starstorms9/geco/master/GECO_logo.jpg)
 
 # GECO – README            
