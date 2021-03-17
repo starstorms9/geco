@@ -10,7 +10,7 @@ pandas==1.0.3
 matplotlib==3.1
 
 numba==0.46
-llvmlite==0.32.1
+llvmlite==0.30
 
 pynndescent
 umap-learn==0.4
