@@ -521,7 +521,6 @@ def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, marker
     is_type_color = chosen_color == 'type'
     color_disc_seq = getattr(px.colors.qualitative if disc_color_scale else px.colors.sequential, color_scale)
 
-#     if disc_color_scale:
     fig = px.scatter(dfgene, x="red_x", y="red_y",
                      color=color_log,
                      range_x = xlims, range_y = ylims,
@@ -531,15 +530,6 @@ def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, marker
                      category_orders={"type": all_types},
                      color_discrete_sequence = color_disc_seq if disc_color_scale else None,
                      color_continuous_scale = color_scale if not disc_color_scale else None)
-#     else:
-#         fig = px.scatter(dfgene, x="red_x", y="red_y",
-#                          color=color_log,
-#                          range_x = xlims, range_y = ylims,
-#                          width=1200, height=800,
-#                          hover_name='geneid',
-#                          hover_data= nat_sort([col for col in dfgene.columns if col.startswith('avg_')]),
-#                          category_orders={"type": all_types},
-#                          color_continuous_scale = color_scale )
     
     fig.update_xaxes(title_text='x')
     fig.update_yaxes(title_text='y')
