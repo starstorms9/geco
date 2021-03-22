@@ -413,6 +413,8 @@ def askGids(dfgene) :
     gids_found = dfgene[dfgene.geneid.isin(gids_inspect)]
     return gids_found
 
+color_scale_options = 
+
 def askColorScale(chosen_color) :
     '''
     Streamlit UI for getting the color scale. Depending on the data and 
@@ -434,7 +436,7 @@ def askColorScale(chosen_color) :
     reverse_color_scale = st.sidebar.checkbox('Reverse color scale?', value=type_color)
 
     if not seq_color_scale :
-        color_scale_options = [cso for cso in dir(px.colors.qualitative) if (not cso.startswith('_')) and (not cso.endswith('_r')) and (not cso=='swatches') ]
+        # color_scale_options = [cso for cso in dir(px.colors.qualitative) if (not cso.startswith('_')) and (not cso.endswith('_r')) and (not cso=='swatches') ]
         color_scale = st.sidebar.selectbox('Discrete Color scale', color_scale_options, index=color_scale_options.index('G10'))
     else :
         color_scale_options = [cso for cso in dir(px.colors.sequential) if (not cso.startswith('_')) and (not cso.endswith('_r')) and (not cso=='swatches') ]
@@ -521,15 +523,25 @@ def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, marker
     is_type_color = chosen_color == 'type'
     color_disc_seq = getattr(px.colors.qualitative if disc_color_scale else px.colors.sequential, color_scale)
 
-    fig = px.scatter(dfgene, x="red_x", y="red_y",
-                     color=color_log,
-                     range_x = xlims, range_y = ylims,
-                     width=1200, height=800,
-                     hover_name='geneid',
-                     hover_data= nat_sort([col for col in dfgene.columns if col.startswith('avg_')]),
-                     category_orders={"type": all_types},
-                     color_continuous_scale = color_scale,
-                     color_discrete_sequence = color_disc_seq )
+    if disc_color_scale:
+        fig = px.scatter(dfgene, x="red_x", y="red_y",
+                         color=color_log,
+                         range_x = xlims, range_y = ylims,
+                         width=1200, height=800,
+                         hover_name='geneid',
+                         hover_data= nat_sort([col for col in dfgene.columns if col.startswith('avg_')]),
+                         category_orders={"type": all_types},
+                         color_discrete_sequence = color_disc_seq )
+    else:
+        fig = px.scatter(dfgene, x="red_x", y="red_y",
+                         color=color_log,
+                         range_x = xlims, range_y = ylims,
+                         width=1200, height=800,
+                         hover_name='geneid',
+                         hover_data= nat_sort([col for col in dfgene.columns if col.startswith('avg_')]),
+                         category_orders={"type": all_types},
+                         color_continuous_scale = color_scale )
+    
     fig.update_xaxes(title_text='x')
     fig.update_yaxes(title_text='y')
     fig.update_traces(marker= dict(size = 6 if len(dfgene) > 1000 else 12 , opacity=0.9, line=dict(width=0.0)))
