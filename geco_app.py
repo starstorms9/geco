@@ -528,8 +528,9 @@ def plotReduced(dfgene, all_types, color_scale, chosen_color, gids_found, marker
                      hover_name='geneid',
                      hover_data= nat_sort([col for col in dfgene.columns if col.startswith('avg_')]),
                      category_orders={"type": all_types},
-                     color_continuous_scale = color_scale,
-                     color_discrete_sequence = color_disc_seq )
+                     color_discrete_sequence = color_disc_seq if disc_color_scale else None,
+                     color_continuous_scale = color_scale if not disc_color_scale else None)
+    
     fig.update_xaxes(title_text='x')
     fig.update_yaxes(title_text='y')
     fig.update_traces(marker= dict(size = 6 if len(dfgene) > 1000 else 12 , opacity=0.9, line=dict(width=0.0)))
