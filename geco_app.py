@@ -413,8 +413,6 @@ def askGids(dfgene) :
     gids_found = dfgene[dfgene.geneid.isin(gids_inspect)]
     return gids_found
 
-color_scale_options = 
-
 def askColorScale(chosen_color) :
     '''
     Streamlit UI for getting the color scale. Depending on the data and 
