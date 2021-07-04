@@ -783,6 +783,12 @@ def readMe() :
 
         If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu](mailto:Habowski@uci.edu) or post an issue on the github issues page [here](https://github.com/starstorms9/geco/issues).
         
+        Link to published manuscript:
+        https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-020-03951-2
+
+        Citation:
+        Habowski, A.N., T.J. Habowski, and M.L. Waterman. (2021) GECO: Gene expression clustering optimization app for non-linear data visualization of patterns. BMC Bioinformatics, 22:29. DOI: 10.1186/s12859-020-03951-2.
+        
         [Streamlit]: <https://www.streamlit.io/>
         """, unsafe_allow_html=True )    
     
