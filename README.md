@@ -14,6 +14,12 @@ If questions or issues arise please contact Amber Habowski at [Habowski@uci.edu]
 
 [GECO Video demonstration in 3 minutes][GecoVid]
 
+Link to published manuscript
+https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-020-03951-2
+
+Citation:
+Habowski, A.N., T.J. Habowski, and M.L. Waterman. (2021) GECO: Gene expression clustering optimization app for non-linear data visualization of patterns. BMC Bioinformatics, 22:29. DOI: 10.1186/s12859-020-03951-2.
+
 ### Quick Guide to Getting Started
 1. Upload data file and verify that GECO has interpreted the sample names/bio-replicates.
 2. Select the reduction parameters to be used for the analysis.
