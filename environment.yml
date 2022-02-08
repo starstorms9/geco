@@ -17,6 +17,6 @@ dependencies:
   - seaborn=0.10.0=py_0
   - umap-learn=0.4.1=py37hc8dfbb8_0
   - pip:
-    - streamlit==0.62
+    - streamlit==0.63
     - natsort==7.0.1
     - pynndescent==0.4.7
