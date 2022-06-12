@@ -1,0 +1,24 @@
+name: geco
+channels:
+  - cannylab
+  - conda-forge
+  - defaults
+dependencies:
+  - matplotlib=3.1.3=py37_0
+  - matplotlib-base=3.1
+  - numba=0.46=py37hb3f55d8_0
+  - numpy-base=1.18
+  - pandas=1.0.3=py37h0573a6f_0
+  - pip=20.0.2=py37_1
+  - plotly=4.6=py_0
+  - python=3.7.7=hcf32534_0_cpython
+  - scikit-learn=0.22=py37hcdab131_0
+  - scipy=1.4
+  - seaborn=0.10.0=py_0
+  - umap-learn=0.4
+  - llvmlite==0.30
+  - virtualenv
+  - pip:
+    - streamlit==0.62
+    - natsort==7.0
+    - pynndescent==0.4.8
