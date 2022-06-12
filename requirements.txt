@@ -1,3 +1,6 @@
+numba==0.46
+llvmlite==0.30
+
 streamlit==0.62
 plotly==4.6
 seaborn==0.10
@@ -8,9 +11,6 @@ scipy==1.4
 numpy==1.18
 pandas==1.0.3
 matplotlib==3.1
-
-numba==0.46
-llvmlite==0.30 --ignore installed
 
 pynndescent==0.4.8
 umap-learn==0.4
