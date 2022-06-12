@@ -16,7 +16,7 @@ dependencies:
   - scipy=1.4
   - seaborn=0.10.0=py_0
   - umap-learn=0.4
-  - llvmlite==0.30 --ignore installed
+  - llvmlite==0.30
   - virtualenv
   - pip:
     - streamlit==0.62
